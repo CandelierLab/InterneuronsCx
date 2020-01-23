@@ -6,15 +6,23 @@ warning('off', 'images:imshow:magnificationMustBeFitForDockedFigure');
 
 % === Parameters ==========================================================
 
+% Debug / production status
+prod = false;
+
+% Intensity factor
+intFactor = 3;
+
 % Tracking
 maxDist = 40;
 maxTime = 10;
 filtNumel = [5 Inf];
 
 % GUI
-prod = false;
 Wheight = 50;
-Wcolor = [33 47 60]/255;
+
+% Wcolor = [33 47 60]/255;    % Dark blue
+% Wcolor = [84 153 199]/255;  % Blue
+Wcolor = [0 0 0];  % Black
 
 % =========================================================================
 
@@ -54,16 +62,17 @@ pos = [screen(1) screen(4)-Wheight+1 screen(3) Wheight];
 
 switch computer
     case 'PCWIN64'
-        viewPos = [screen(1) 0 screen(3) screen(4)-3*Wheight];
+        Hbar = 41;
+        viewPos = [screen(1) Hbar screen(3) screen(4)-Wheight-Hbar];
     case 'GLNXA64'
         viewPos = [screen(1) 0 screen(3) screen(4)-3*Wheight];
 end
 set(vMain, 'Position', pos);
 set(vMain, 'color', Wcolor);
 
-% --- Keep window always on top
+% --- Keep main window always on top
 
-if prod
+if true
     
     warning('off', 'MATLAB:ui:javaframe:PropertyToBeRemoved')
     drawnow expose
@@ -217,7 +226,7 @@ updateStudy();
         
         if isempty(vViewer)
             vViewer = GUI.viewer_Raw('Main', vMain, 'study', study, 'run', run, ...
-                'color', Wcolor, 'position', viewPos);
+                'color', Wcolor, 'position', viewPos, 'intensityFactor', intFactor);
         else
             closeViewer();
         end
