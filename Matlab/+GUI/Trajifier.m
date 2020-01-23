@@ -10,6 +10,7 @@ addParameter(p, 'dataSource', dataSource, @isstruct);
 addParameter(p, 'study', '', @ischar);
 addParameter(p, 'run', '', @ischar);
 addParameter(p, 'position', [], @isnumeric);
+addParameter(p, 'intensityFactor', 1, @isnumeric);
 addParameter(p, 'color', [1 1 1], @isnumeric);
 
 parse(p, varargin{:});  
@@ -18,28 +19,38 @@ DS = p.Results.dataSource;
 study = p.Results.study;
 run = p.Results.run;
 position = p.Results.position;
+intFactor = p.Results.intensityFactor;
 color = p.Results.color;
 
 % =========================================================================
 
-% --- Data and files ------------------------------------------------------
+% --- File names ----------------------------------------------------------
 
-% Stack info
-ftiff = [DS.data study filesep run filesep run '.tiff'];
-info = imfinfo(ftiff);
+fName = [DS.data study filesep run filesep run '.tiff'];
+FrName = [DS.data study filesep run filesep 'Files' filesep 'Fragments.mat'];
+
+% --- Misc variables ------------------------------------------------------
+
+Wmenu = 400;
+Fcolor = [84 153 199]/255;
+
+info = imfinfo(fName);
 n = numel(info);
+frameFormat = ['%0' num2str(ceil(log10(n))) 'i'];
+aspRatio = n/info(1).Width;
+alim3d = [1 info(1).Height 1 info(1).Width 1 n];
 
-% % % % Stack memory mapping
-% % % Stack = memmapfile([DS.data study filesep run filesep run '.dat'], ...
-% % %     'format', {'uint8', [info.Height info.Width n], 'raw'});
+viewPlay = false;
+viewFrag = true;
+viewTraj = true;
+viewQuar = true;
 
-fFragments = [DS.data study filesep run filesep 'Files' filesep 'Fragments.mat'];
-tmp = load(fFragments);
+% --- Load Fragments ------------------------------------------------------
+
+tmp = load(FrName);
 Fr = tmp.Fr;
 
 % --- User interface ------------------------------------------------------
-
-Ws = 150;
 
 % --- Figure
 
@@ -53,33 +64,111 @@ end
 
 clf(Viewer)
 
-% --- Display elements
+% --- Display -------------------------------------------------------------
 
 ui = struct();
 
-% Axis
+% --- Axis
+
 ui.image = axes('units', 'pixels', 'Position', [0 0 1 1]);
+ui.view3d = axes('units', 'pixels', 'Position', [0 0 1 1]);
+axtoolbar(ui.view3d, {'rotate', 'restoreview'});
 
-% Title
-ui.title = uicontrol('style', 'text', 'position', [0 0 1 1]);
+% --- Title
 
-ui.deco.left = annotation('rectangle', 'units','pixel', 'FaceColor', 'w');
-ui.deco.right = annotation('rectangle', 'units','pixel', 'FaceColor', 'w');
+ui.title = uicontrol('style', 'text', 'position', [0 0 1 1], ...
+    'FontName', 'Courier New', 'FontSize', 12);
 
-% --- Control elements
+% --- Side panels
 
+ui.menu.shortcuts = uicontrol('style', 'text', ...
+    'FontName', 'Courier New', 'FontSize', 11, 'HorizontalAlignment', 'left', ...
+    'backgroundColor', color, 'ForegroundColor', 'w', ...
+    'position', [0 0 1 1]);
+
+ui.menu.shortcuts.String = [ ...
+    '----- CONTROLS ---------------------------' newline ...
+    newline ...
+    'VIEW' newline ...
+    '  Global [g]' newline ...
+    '  Local [l]' newline ...
+    '  Size [w...]' newline ...
+    '  Toggle fragments view [F]' newline ...
+    '  Toggle trajectories view [T]' newline ...
+    '  Toggle quarantine view [Q]' newline ...
+    newline ...
+    'NAVIGATION' newline ...
+    '  Play/pause [space]' newline ...
+    '  Frames per second [v...]' newline ...
+    '  Flashback and play [b]' newline ...
+    '  Flashback duration [d...]' newline ...
+    '  ±1 frame [' char(hex2dec('2190')) ',' char(hex2dec('2192')) ']' newline ...
+    '  Rewind [Ctrl+' char(hex2dec('2193')) ']' newline ...
+    newline ...
+    'TRAJECTORIES' newline ...
+    '  End [' char(hex2dec('2191')) ']' newline ...
+    '  Beginning [' char(hex2dec('2193')) ']' newline ...
+    '  Include fragment [Left click]' newline ...
+    '  Remove fragment [Del]', newline ...
+    '  Flashback last fragment and play [f]' newline ...
+    '  Toggle quarantine status [q]' newline ...
+    newline ...
+    'ASSIGNMENTS [Left click]' newline ...
+    ' Time point quarantine' newline ...
+    ' Define as cell' newline ...
+    ' Define as soma' newline ...
+    ' Define as centrosome' newline ...
+    ' Define as cone' newline ...
+    newline ...
+    'INTERFACE' newline ...
+    '  Save trajectories [s]' newline ...
+    ];
+
+ui.info = uicontrol('style', 'text', ...
+    'FontName', 'Courier New', 'FontSize', 11, 'HorizontalAlignment', 'left', ...
+    'backgroundColor', color, 'ForegroundColor', 'w', ...
+    'position', [0 0 1 1]);
+
+ui.info.String = 'Some info ...';
+
+% --- Controls ------------------------------------------------------------
+
+% --- Intensity factor
+
+ui.menu.Intfactor = uicontrol('style', 'text', ...
+    'string', 'Intensity factor', 'FontName', 'Courier New', 'FontSize', 11, ...
+    'backgroundColor', color, 'ForegroundColor', 'w', ...
+    'position', [0 0 1 1]);
+ui.Intfactor = uicontrol('style', 'edit', ...
+    'position', [0 0 1 1], ...
+    'string', num2str(intFactor), 'FontName', 'Courier New', 'FontSize', 11, ...
+    'Callback', @updateImage);
+
+% --- Time
 ui.time = uicontrol('style','slider', 'position', [0 0 1 1], ...
     'min', 1, 'max', n, 'value', 1, 'SliderStep', [1 1]./(n-1));
 
-% Control size callback
+% --- Context menu
+
+cMenu = uicontextmenu;
+
+% Create child menu items for the uicontextmenu
+uimenu(cMenu, 'Label', 'Remove point', 'Callback', @rightClick);
+uimenu(cMenu, 'Label', 'cell', 'Callback', @rightClick);
+uimenu(cMenu, 'Label', 'soma', 'Callback', @rightClick);
+uimenu(cMenu, 'Label', 'centrosome', 'Callback', @rightClick);
+uimenu(cMenu, 'Label', 'cone', 'Callback', @rightClick);
+
+% --- Listeners
+
 set(Viewer, 'ResizeFcn', @updateControlSize);
-updateControlSize();
+set(Viewer, 'Position', position);
+set(Viewer, 'KeyPressFcn', @keyInput);
 
 addlistener(ui.time, 'Value', 'PostSet', @updateImage);
 
-set(Viewer, 'KeyPressFcn', @newControl);
-
 updateImage();
+update3dview();
 
 % === Controls ============================================================
 
@@ -87,89 +176,165 @@ updateImage();
         
         % --- Figure size       
         tmp = get(Viewer, 'Outerposition');
-        W = tmp(3); w = W - 2*Ws;
+        W = tmp(3);
         H = tmp(4);
         
-        % --- Integrated version
+        % --- Window
+            
+        set(Viewer, 'Menu', 'none', 'ToolBar', 'none', 'color', color);
+        if ~isempty(position)
+            set(Viewer, 'Position', position);
+        end
+        h = H-30;
         
-        if ~isempty(Main)
+        % --- Axes
+        ui.image.Position = [Wmenu+20 235 700 700];
+        ui.view3d.Position = [Wmenu+730 235 700 700];
+        
+        % --- Time
+        
+        ui.time.Position = [Wmenu+20 200 700 20];
+        ui.title.Position = [Wmenu+10 h-50 680 20];
+        
+        % --- Menu
+        
+        % Intensity factor
+        ui.menu.Intfactor.Position = [10 h-50 200 20];
+        ui.Intfactor.Position = [210 h-50 50 25];
+        
+        % Shortcuts
+        ui.menu.shortcuts.Position = [10 10 380 h-80];
+                
+        % --- Title
+        
+        ui.title.BackgroundColor = color;
+        ui.title.ForegroundColor = 'w';
+        
+        % --- Info
+               
+        ui.info.Position = [Wmenu+20 10 W-Wmenu-30 150];
+        
+    end
+    
+    % --- KEY INPUTS ------------------------------------------------------
 
-            % --- Window
+    function keyInput(varargin)
+       
+        event = varargin{2};
+        ui.info.String = event.Character;
+        
+        switch event.Character
             
-            set(Viewer, 'Menu', 'none', 'ToolBar', 'none', 'color', color);
-            if ~isempty(position)
-                set(Viewer, 'Position', position);
-            end
-            h = H-30;
-            
-            ui.title.BackgroundColor = color;
-            ui.title.ForegroundColor = 'w';
-            
-        else
-            
-            % --- Window
-            set(Viewer, 'WindowStyle', 'docked');
-            h = H;
-            
+            case ' '
+                viewPlay = ~viewPlay;
+                if viewPlay
+                    updateImage();
+                end
+                
+            case 'F'
+                viewFrag = ~viewFrag;
+                update3dview;
+                
+            case 'T'
+                viewTraj = ~viewTraj;
+                update3dview;
+                
+            case 'Q'
+                viewQuar = ~viewQuar;
+                update3dview;
         end
         
-        % --- Main elements        
+    end
+
+    % --- LEFT CLICK ------------------------------------------------------
+
+    function leftClick(varargin)
+       
+        get(ui.image, 'CurrentPoint');
+        ui.info.String = 'L Click';
         
-        ui.deco.left.Position = [0 0 Ws h+1];
-        ui.deco.right.Position = [W-Ws 0 Ws h+1];
-        
-        ui.image.Position = [Ws+50 75 w-100 h-150];
-        
-        ui.time.Position = [Ws+10 10 w-15 20];
-        ui.title.Position = [Ws+w/2-100 h-70 200 20];
-        
-        % --- Left Panel
-        
-        
-        % --- Right Panel
+        % Check that click is inside height x width
         
     end
 
-    function newControl(varargin)
+    % --- RIGHT CLICK -----------------------------------------------------
+
+    function rightClick(varargin)
+       
+        varargin{1}.Text;
+        get(ui.image, 'CurrentPoint');
         
-       varargin{2} 
+        ui.info.String = 'R Click';
+        
+        % Check that click is inside height x width
         
     end
 
-    % === Image ===============================================================
+% === Image ===============================================================
 
     function updateImage(varargin)
         
-        % --- Get values
+        % --- Values
         
         ti = round(get(ui.time, 'Value'));
-        If = 3;
-        
+        If = str2double(ui.Intfactor.String);
+                  
         % --- Image -------------------------------------------------------
         
+        Img = If*double(imread(fName, ti))/255;
+        
+        set(Viewer, 'CurrentAxes', ui.image);
         cla(ui.image)
-        hold(ui.image, 'on')
+        hold(ui.image, 'on');
 
-        % Image
-        % Img = If*double(Stack.data.raw(:,:,ti))/255;
-        Img = If*double(imread(ftiff, ti))/255;
-        imshow(Img, 'Parent', ui.image);       
+        h = imshow(Img);
         
-        % Objects
-
-%         for i = find(cellfun(@(x) ismember(ti,x), {Fr.t}))
-%             j =  find(Fr(i).t==ti);
-%             scatter(Fr(i).cell.pos(j,1), Fr(i).cell.pos(j,2), '+', ...
-%                 'MarkerFaceColor', 'none', 'MarkerEdgeColor', 'm')
-%         end
+        % Callbacks
+        h.ButtonDownFcn = @leftClick;
+        h.UIContextMenu = cMenu;
         
-        % Misc
-        axis(ui.image, 'on', 'tight', 'xy');
-        
-        ui.title.String = ['Frame ' num2str(ti)];
-        
+        axis xy tight        
+        ui.title.String = ['Frame ' num2str(ti, frameFormat) ' / ' num2str(n)];                
         drawnow limitrate
+        
+        if viewPlay
+            if ti==ui.time.Max
+                ui.time.Value = ui.time.Min;
+            else
+                ui.time.Value = ti+1;
+            end
+            updateImage(varargin{:});
+        end
+        
+    end
+
+% === 3D view =============================================================
+
+    function update3dview(varargin)
+        
+        % --- 3D view -----------------------------------------------------
+        
+        set(Viewer, 'CurrentAxes', ui.view3d);
+        cla(ui.view3d)
+        hold(ui.view3d, 'on');
+        
+        % --- Fragments
+        if viewFrag
+            
+            I = find(strcmp({Fr.status}, 'unused'));
+            for i = I
+                plot3(Fr(i).cell.pos(:,1), Fr(i).cell.pos(:,2), Fr(i).t, ...
+                    '-', 'color', Fcolor);
+            end
+        
+        end
+        
+        grid on
+        axis(alim3d);
+        daspect([1 1 aspRatio])
+        view(65,25)
         
     end
 
 end
+

@@ -28,6 +28,7 @@ fname = [DS.data study filesep run filesep run '.tiff'];
 
 info = imfinfo(fname);
 n = numel(info);
+frameFormat = ['%0' num2str(ceil(log10(n))) 'i'];
 
 Wmenu = 400;
 Winfo = 400;
@@ -46,34 +47,53 @@ end
 
 clf(Viewer)
 
-% --- Display elements
+% --- Display -------------------------------------------------------------
 
 ui = struct();
 
-% Axis
+% --- Axis
+
 ui.axes = axes('units', 'pixels', 'Position', [0 0 1 1]);
 
-% Title
-ui.title = uicontrol('style', 'text', 'position', [0 0 1 1]);
+% --- Title
 
-ui.deco.menu = annotation('rectangle', 'units','pixel', 'FaceColor', 'w');
-ui.deco.info = annotation('rectangle', 'units','pixel', 'FaceColor', 'w');
+ui.title = uicontrol('style', 'text', 'position', [0 0 1 1], ...
+    'FontName', 'Courier New', 'FontSize', 12);
 
-% --- Control elements
+% --- Side panels
 
-ui.time = uicontrol('style','slider', 'position', [0 0 1 1], ...
-    'min', 1, 'max', n, 'value', 1, 'SliderStep', [1 1]./(n-1));
+ui.menu.shortcuts = uicontrol('style', 'text', ...
+    'FontName', 'Courier New', 'FontSize', 11, ...
+    'backgroundColor', color, 'ForegroundColor', 'w', ...
+    'position', [0 0 1 1]);
 
-ui.deco.Intfactor = uicontrol('style', 'text', ...
-    'string', 'Int. factor', ...
+ui.info = uicontrol('style', 'text', ...
+    'FontName', 'Courier New', 'FontSize', 11, ...
+    'backgroundColor', color, 'ForegroundColor', 'w', ...
+    'position', [0 0 1 1]);
+
+ui.menu.shortcuts.String = '                                          ';
+ui.info.String = '                                          ';
+
+% --- Controls ------------------------------------------------------------
+
+% --- Intensity factor
+
+ui.menu.Intfactor = uicontrol('style', 'text', ...
+    'string', 'Intensity factor', 'FontName', 'Courier New', 'FontSize', 11, ...
     'backgroundColor', color, 'ForegroundColor', 'w', ...
     'position', [0 0 1 1]);
 ui.Intfactor = uicontrol('style', 'edit', ...
     'position', [0 0 1 1], ...
-    'string', num2str(intFactor), ...
+    'string', num2str(intFactor), 'FontName', 'Courier New', 'FontSize', 11, ...
     'Callback', @updateImage);
 
-% Control size callback
+% --- Time
+ui.time = uicontrol('style','slider', 'position', [0 0 1 1], ...
+    'min', 1, 'max', n, 'value', 1, 'SliderStep', [1 1]./(n-1));
+
+% --- Listeners
+
 set(Viewer, 'ResizeFcn', @updateControlSize);
 set(Viewer, 'Position', position);
 
@@ -100,28 +120,27 @@ updateImage();
         
         % --- Structure elements
         
-        ui.deco.menu.Position = [0 0 Wmenu h+1];
-        ui.deco.info.Position = [W-Wmenu 0 Wmenu h+1];        
         ui.axes.Position = [Wmenu+55 75 w-100 h-150];
         ui.time.Position = [Wmenu+10 10 w-15 20];
         ui.title.Position = [Wmenu+w/2-100 h-70 200 20];
         
         % --- Menu
         
-        ui.deco.menu.FaceColor = color;
+        % Intensity factor
+        ui.menu.Intfactor.Position = [10 h-50 200 20];
+        ui.Intfactor.Position = [210 h-50 50 25];
         
-        % Magnification
-        ui.deco.Intfactor.Position = [10 h-50 100 20];
-        ui.Intfactor.Position = [100 h-50 100 20];
-        
+        % Shortcuts
+        ui.menu.shortcuts.Position = [10 10 380 h-80];
+                
         % --- Title
         
         ui.title.BackgroundColor = color;
         ui.title.ForegroundColor = 'w';
         
         % --- Info
-        
-        ui.deco.info.FaceColor = color;
+               
+        ui.info.Position = [W-Winfo-10 10 380 h-80];
         
     end
 
@@ -147,7 +166,7 @@ updateImage();
         
         axis xy tight
         
-        ui.title.String = ['Frame ' num2str(ti)];
+        ui.title.String = ['Frame ' num2str(ti, frameFormat) ' / ' num2str(n)];
         
         drawnow limitrate
         
