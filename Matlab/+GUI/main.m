@@ -253,7 +253,7 @@ updateStudy();
         
         % --- Processing
         
-        Shapes = struct('t', {}, 'cell', {}, 'soma', {}, 'centrosome', {}, 'cone', {});
+        Shapes = struct('t', {}, 'soma', {}, 'centrosome', {}, 'cone', {});
         empty = struct('idx', [], 'pos', NaN(1,2), 'fluo', NaN);
         wb = waitbar(0, '', 'Name', 'Detection');
 
@@ -268,8 +268,7 @@ updateStudy();
                
                 k = numel(Shapes)+1;                
                 Shapes(k).t = i;
-                Shapes(k).cell = B(j);
-                Shapes(k).soma = empty;
+                Shapes(k).soma = B(j);
                 Shapes(k).centrosome = empty;
                 Shapes(k).cone = empty;
                 
@@ -331,13 +330,10 @@ updateStudy();
     
         Tr = Tracking.Tracker;
     
-%         Tr.parameter('cell_pos', 'hard', 'n1', 'max', maxDist);
-        Tr.parameter('cell_pos', 'max', maxDist);
+%         Tr.parameter('soma_pos', 'hard', 'n1', 'max', maxDist);
+        Tr.parameter('soma_pos', 'max', maxDist);
 
-        Tr.parameter('cell_idx', 'active', false);
-        Tr.parameter('cell_fluo', 'active', false);
         Tr.parameter('soma_idx', 'active', false);
-        Tr.parameter('soma_pos', 'active', false);
         Tr.parameter('soma_fluo', 'active', false);
         Tr.parameter('centrosome_idx', 'active', false);
         Tr.parameter('centrosome_pos', 'active', false);
@@ -356,7 +352,6 @@ updateStudy();
             Idx = find(T==i);
             n = numel(Idx);
             
-            Cell = [Shapes(Idx).cell];
             Soma = [Shapes(Idx).soma];
             Centrosome = [Shapes(Idx).centrosome];
             Cone = [Shapes(Idx).cone];
@@ -364,13 +359,10 @@ updateStudy();
             % --- Parameters
             
             % Active parameters            
-            Tr.set('cell_pos', reshape([Cell.pos], [2 n])');
+            Tr.set('soma_pos', reshape([Soma.pos], [2 n])');
             
             % Passive parameters
-            Tr.set('cell_idx', {Cell.idx}');
-            Tr.set('cell_fluo', [Cell.fluo]');
             Tr.set('soma_idx', {Soma.idx}');
-            Tr.set('soma_pos', reshape([Soma.pos], [2 n])');
             Tr.set('soma_fluo', [Soma.fluo]');
             Tr.set('centrosome_idx', {Centrosome.idx}');
             Tr.set('centrosome_pos', reshape([Centrosome.pos], [2 n])');
@@ -400,16 +392,12 @@ updateStudy();
         
         waitbar(1, wb, 'Converting');
         
-        Fr = struct('status', {}, 't', {}, 'cell', {}, 'soma', {}, 'centrosome', {}, 'cone', {});
+        Fr = struct('status', {}, 't', {}, 'soma', {}, 'centrosome', {}, 'cone', {});
         Nt = numel(Tr.traj);
         for i = 1:Nt
             
             Fr(i).status = 'unused';
             Fr(i).t = Tr.traj(i).t;
-            
-            Fr(i).cell.idx = Tr.traj(i).cell_idx;
-            Fr(i).cell.pos = Tr.traj(i).cell_pos;
-            Fr(i).cell.fluo = Tr.traj(i).cell_fluo;
             
             Fr(i).soma.idx = Tr.traj(i).soma_idx;
             Fr(i).soma.pos = Tr.traj(i).soma_pos;
