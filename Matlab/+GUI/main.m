@@ -216,8 +216,10 @@ updateStudy();
     % =====================================================================
     function closeViewer()
         
-        close(vViewer)
-        vViewer = [];
+        if ~isempty(vViewer)
+            close(vViewer.Viewer);
+            vViewer = [];
+        end
         
     end
 
@@ -430,8 +432,22 @@ updateStudy();
     function cTrajifier(varargin)
 
         if isempty(vViewer)
-            vViewer = GUI.Trajifier('Main', vMain, 'study', study, 'run', run, ...
-                'color', Wcolor, 'position', viewPos, 'intensityFactor', intFactor);
+%             vViewer = GUI.Trajifier('Main', vMain, 'study', study, 'run', run, ...
+%                 'color', Wcolor, 'position', viewPos, 'intensityFactor', intFactor);
+
+            % Define Viewer object
+            vViewer = GUI.Trajifier;
+            
+            % Properties
+            vViewer.study = study;
+            vViewer.run = run;
+            vViewer.Window.position = viewPos;
+            vViewer.Window.color = Wcolor;
+            vViewer.Visu.intensityFactor = intFactor;
+
+            % Init viewer
+            vViewer.init;
+            
         else
             closeViewer();
         end

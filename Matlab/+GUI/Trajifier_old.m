@@ -1,4 +1,4 @@
-function Viewer = Trajifier(varargin)
+function Viewer = Trajifier_old(varargin)
 
 clc
 warning('off', 'images:imshow:magnificationMustBeFitForDockedFigure')
@@ -440,16 +440,19 @@ updateImage();
                     updateImage;
                     
                 case 'T'
+                    
                     viewTraj = ~viewTraj;
                     update3dview;
                     updateImage;
                     
                 case 'Q'
+                    
                     viewQuar = ~viewQuar;
                     update3dview;
                     updateImage;
                     
                 otherwise
+                    
                     switch event.Key
                         
                         case 'leftarrow'
