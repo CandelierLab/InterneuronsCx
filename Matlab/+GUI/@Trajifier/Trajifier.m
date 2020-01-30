@@ -18,7 +18,7 @@ classdef Trajifier < handle
         mousePosition = struct('image', NaN(2,1), 'view3d', NaN(2,1))
         fid = NaN
         tid = NaN
-        Pos
+        Pts
                 
         % Fragments
         Fr

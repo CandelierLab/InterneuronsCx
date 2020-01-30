@@ -1,5 +1,6 @@
 function saveFragments(this)
 %saveFragments Save fragments
 
-save(this.File.fragments, 'this.Fr');       
+Fr = this.Fr;
+save(this.File.fragments, 'Fr');       
 

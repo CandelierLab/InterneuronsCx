@@ -104,28 +104,40 @@ switch key
     case 'q'
         % Toggle quarantine
         
-        % % %         if inImage
-        % % %
-        % % %             ci = findClosest();
-        % % %             if isempty(ci), return; end
-        % % %
-        % % %             switch Fr(ci).status
-        % % %
-        % % %                 case 'unused'
-        % % %                     Fr(ci).status = 'quarantine';
-        % % %                     ui.action.String = ['Placed '  num2str(ci) ' in quarantine'];
-        % % %
-        % % %                 case 'quarantine'
-        % % %                     Fr(ci).status = 'unused';
-        % % %                     ui.action.String = ['Removed '  num2str(ci) ' from quarantine'];
-        % % %             end
-        % % %
-        % % %             update3dview;
-        % % %             updateImage;
-        % % %
-        % % %             saveFragments;
-        % % %
-        % % %         end
+        % Find closest fragment and trajectory
+        fid = this.getFragment();
+        if isnan(fid) || isnumeric(this.Fr(fid).status)
+            return
+        end
+            
+        switch this.Fr(fid).status
+            case 'unused'
+                this.Fr(fid).status = 'quarantine';
+                this.ui.action.String = "Placed " + fid + " in quarantine";
+                
+            case 'quarantine'
+                this.Fr(fid).status = 'unused';
+                this.ui.action.String = "Removed " + fid + " from quarantine";
+        end
+        
+        this.prepareDisplay;
+        this.updateDisplay;
+        this.updateInfos;
+        
+        this.saveFragments;
+       
+    case 'r'
+        % Search trajectory
+        
+        fid = find(cellfun(@(x) x(1)==value, {this.Fr.status}),1,'first');
+        if ~isempty(fid)
+            this.tid = this.Fr(fid).status;
+            this.ui.time.Value = this.Fr(fid).t(1);
+            
+            this.updateInfos();
+            this.updateDisplay();
+            
+        end
         
     case 's'
         % Save fragments
@@ -155,29 +167,37 @@ switch key
     case '+'
         % Add to trajectory
         
+        % Find closest fragment and trajectory
+        fid = this.getFragment();
+        if isnan(fid) || isnumeric(this.Fr(fid).status) || strcmp(this.Fr(fid).status, 'quarantine')
+            return
+        end
+        
+        if isnan(this.tid), return; end
+        this.Fr(fid).status = this.tid;
+
+        this.updateInfos;
+        this.updateWarnings;
+        this.prepareDisplay;
+        this.updateDisplay;
+        this.saveFragments;
+        
     case '-'
         % Remove from trajectory
         
-% % %         if isempty(Traj), return; end
-% % %         
-% % %         if inImage
-% % %             
-% % %             % --- Find closest Fragment
-% % %             
-% % %             mi = findClosest(Traj);
-% % %             
-% % %             ui.action.String = ['Removed fragment ' num2str(Traj(mi))];
-% % %             
-% % %             Fr(Traj(mi)).status = 'unused';
-% % %             Traj(mi) = [];
-% % %             
-% % %             update3dview();
-% % %             updateImage();
-% % %             updateInfos();
-% % %             updateWarnings();
-% % %             
-% % %         end
+        % Find closest fragment and trajectory
+        fid = this.getFragment();
+        if isnan(fid) || ~isnumeric(this.Fr(fid).status)
+            return
+        end
         
+        this.Fr(fid).status = 'unused';
+
+        this.updateInfos;
+        this.updateWarnings;
+        this.prepareDisplay;
+        this.updateDisplay;
+        this.saveFragments;
         
     case 'F'
         % Toggle fragment view
@@ -228,15 +248,29 @@ switch key
         this.ui.time.Value = this.ui.time.Min;
         this.updateDisplay();
     
-    case 'leftClick'
-        % Select fragment in the visible ones
-        
-        this.ui.action.String = "Fragment selection";
-        
     case 'middleClick'
-        % Select trajectory in the visible ones
+        % Select fragment (among visible)
         
-        this.ui.action.String = "Trajectory selection";
+        tmp = this.getFragment();
+        if isnan(tmp), return; end
+        this.fid = tmp;
+        
+        this.updateInfos;
+        this.ui.action.String = "Fragment " + this.fid + " selected";
+        this.prepareDisplay;
+        this.updateDisplay;
+        
+    case 'leftClick'
+        % Select trajectory (among visible)
+        
+        tmp = this.getFragment();
+        if isnan(tmp) || ~isnumeric(this.Fr(tmp).status)
+            return
+        end
+        this.tid = this.Fr(tmp).status;
+        
+        this.updateInfos;
+        this.ui.action.String = "Trajectory " + this.tid + " selected";
         
     otherwise
         

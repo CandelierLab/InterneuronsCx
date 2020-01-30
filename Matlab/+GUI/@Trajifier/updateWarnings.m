@@ -22,4 +22,4 @@ W = 'TO DO !!';
 % % %     
 % % % end
 
-this.ui.warnings.String = varargin{1};
+this.ui.warnings.String = W;

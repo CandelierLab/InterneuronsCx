@@ -16,24 +16,33 @@ end
 s = "Current trajectory " + this.tid;
 I = find(cellfun(@(x) isnumeric(x) && x==this.tid, {this.Fr.status}));
 if numel(I)
-    s = s + " [ " + string(I).join(' ') + "]";
+    t1 = min(cellfun(@min, {this.Fr(I).t}));
+    t2 = max(cellfun(@max, {this.Fr(I).t}));
+    s = s + " [" + string(I).join(' ') + "] from t=" + t1 + " to t=" + t2;
 else
-    s = s + " [ empty ]";
+    s = s + " [empty]";
 end
 S(end+1) = s;
+S(end+1) = "";
 
 % --- Selected fragment
 
 if isnan(this.fid)
-    s = 'No fragment selected.';
+    S(end+1) = 'No fragment selected.';
 else
-    s = "Fragment selected: "  + this.fid;
+    S(end+1) = "Fragment selected: "  + this.fid;
+    
+    nt = numel(this.Fr(this.fid).t);
+    t1 = min(this.Fr(this.fid).t);
+    t2 = max(this.Fr(this.fid).t);
+    S(end+1) = nt + " positions from t=" + t1 + " to t=" + t2;
+    
 end
-S(end+1) = s;
 
-% Additional input
+% --- Additional input
 if exist('c', 'var')
-    S(end+2) = c;
+    S(end+1) = "";
+    S(end+1) = c;
 end
 
 this.ui.info.String = S.join(newline);

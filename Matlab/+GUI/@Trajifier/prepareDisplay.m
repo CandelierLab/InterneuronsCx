@@ -5,24 +5,16 @@ function prepareDisplay(this, varargin)
 
 tic
 
-% --- Input ---------------------------------------------------------------
+% --- Parameters ----------------------------------------------------------
 
-p = inputParser;
-addParameter(p, 'reset', {}, @isstring);
-parse(p, varargin{:});
+nt = this.Images.number;
 
-reset = p.Results.reset;
+tI = unique([this.Fr(cellfun(@isnumeric, {this.Fr.status})).status]);
+nTraj = numel(tI);
 
-% --- Reset ---------------------------------------------------------------
+% --- Trajectories --------------------------------------------------------
 
-% --- Trajectories
-
-if ismember("traj", reset)
-
-    tI = unique([this.Fr(cellfun(@isnumeric, {this.Fr.status})).status]);
-    this.Visu.Color.trajs = lines(numel(tI));
-    
-end
+this.Visu.Color.trajs = lines(nTraj);
 
 % --- Local view ----------------------------------------------------------
 
@@ -104,22 +96,32 @@ drawnow limitrate
 
 % --- Positions -----------------------------------------------------------
 
-empty(this.Images.number) = struct('x', [], 'y', []);
-this.Pos = struct('unused', empty, 'quarantine', empty, 'traj', empty);
-
-this.Pos.unused
+this.Pts = struct('nTimes', nt, 'nTraj', nTraj, ...
+    'unused', repmat(struct('x', [], 'y', []), [nt,1]), ...
+    'quarantine', repmat(struct('x', [], 'y', []), [nt,1]), ...
+    'traj', repmat(struct('x', NaN(nTraj,1), 'y', NaN(nTraj,1)), [nt,1]));
 
 for i = 1:numel(this.Fr)
     
     switch this.Fr(i).status
         
         case 'unused'
-            
             for j = 1:numel(this.Fr(i).t)
-                this.Pos.unused(this.Fr(i).t(j)).x(end+1) = this.Fr(i).soma.pos(j,1);
-                this.Pos.unused(this.Fr(i).t(j)).y(end+1) = this.Fr(i).soma.pos(j,2);
+                this.Pts.unused(this.Fr(i).t(j)).x(end+1) = this.Fr(i).soma.pos(j,1);
+                this.Pts.unused(this.Fr(i).t(j)).y(end+1) = this.Fr(i).soma.pos(j,2);
             end
-                        
+               
+        case 'quarantine'
+            for j = 1:numel(this.Fr(i).t)
+                this.Pts.quarantine(this.Fr(i).t(j)).x(end+1) = this.Fr(i).soma.pos(j,1);
+                this.Pts.quarantine(this.Fr(i).t(j)).y(end+1) = this.Fr(i).soma.pos(j,2);
+            end
+            
+        otherwise
+            for j = 1:numel(this.Fr(i).t)
+                this.Pts.traj(this.Fr(i).t(j)).x(this.Fr(i).status) = this.Fr(i).soma.pos(j,1);
+                this.Pts.traj(this.Fr(i).t(j)).y(this.Fr(i).status) = this.Fr(i).soma.pos(j,2);
+            end
     end
     
 end

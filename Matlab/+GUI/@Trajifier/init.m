@@ -24,9 +24,9 @@ this.tid = this.newTrajId;
 % --- Parameters
 
 this.Window.menuWidth = 400;
-this.Visu.Color.fragment = [1 1 1]*0.5; %[84 153 199]/255;
+this.Visu.Color.fragment = [1 1 1]*0.6; %[84 153 199]/255;
 this.Visu.Color.selected = [203 67 53]/255;
-this.Visu.Color.quarantine = [0.86 0.46 0.2];
+this.Visu.Color.quarantine = [0 0 0]; %[0.86 0.46 0.2];
 this.Visu.frameFormat = ['%0' num2str(ceil(log10(this.Images.number))) 'i'];
 this.Visu.aspRatio = this.Images.number/this.Images.Width;
 this.Visu.alim3d = [1 this.Images.Height 1 this.Images.Width 1 this.Images.number];
@@ -47,7 +47,6 @@ this.Visu.viewQuar = false;
 this.Visu.hFr3 = [];
 this.Visu.hQ3 = [];
 this.Visu.hTr3 = [];
-this.Visu.hTrs3 = {};
 
 % --- Figure
 
@@ -148,7 +147,7 @@ this.Viewer.WindowButtonMotionFcn = @mouseMove;
 addlistener(this.ui.time, 'Value', 'PostSet', @this.updateDisplay);
 
 this.updateInfos();
-this.prepareDisplay('reset', "traj");
+this.prepareDisplay();
 this.updateDisplay();
 
     % === GUI nested functions ============================================
@@ -190,7 +189,6 @@ this.updateDisplay();
     function keyInput(varargin)
        
         event = varargin{2};
-        % this.ui.action.String = [event.Character '/' event.Key];
 
         if Input.active
         
@@ -208,7 +206,7 @@ this.updateDisplay();
             
         else
             
-            if ismember(event.Character, {'d', 'v', 'w'})
+            if ismember(event.Character, {'d', 'r', 'v', 'w'})
                 Input.active = true;
                 Input.command = event.Character;
                 return
