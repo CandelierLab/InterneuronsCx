@@ -1,4 +1,4 @@
-function updateDisplay(this, varargin)
+function doublonDisplay(this, varargin)
 
 % --- Parameters
 
@@ -21,25 +21,38 @@ this.ui.title.String = ['Frame ' num2str(ti, this.Visu.frameFormat) ' / ' num2st
 
 % --- Points on image -----------------------------------------------------
 
-if this.Visu.viewFrag    
-    scatter(this.Pts.unused(ti).x, this.Pts.unused(ti).y, 30, ...
-        'MarkerFaceColor', 'w', ...
-        'MarkerEdgeColor', 'k', ...
-        'UIContextMenu', this.Visu.cMenu);
+Traj = find(string({this.Fr.status})==string(this.tid));
+
+so = NaN(numel(Traj),2);
+ce = NaN(numel(Traj),2);
+co = NaN(numel(Traj),2);
+
+for i = 1:numel(Traj)
+    
+    t = find(this.Fr(Traj(i)).t==ti);
+    if isempty(t), continue; end
+    
+    so(i,:) = this.Fr(Traj(i)).soma.pos(t,:);
+    ce(i,:) = this.Fr(Traj(i)).centrosome.pos(t,:);
+    co(i,:) = this.Fr(Traj(i)).cone.pos(t,:);
+    
 end
 
-if this.Visu.viewQuar
-    scatter(this.Pts.quarantine(ti).x, this.Pts.quarantine(ti).y, 30, ...
-        'MarkerFaceColor', this.Visu.Color.quarantine, ...
-        'MarkerEdgeColor', 'w');    
-end
+scatter(so(:,1), so(:,2), 30, ...
+    this.Visu.Color.trajs(this.tid,:), 'filled', ...
+    'MarkerEdgeColor', 'k', ...
+    'UIContextMenu', this.Visu.cMenu);
 
-if this.Visu.viewTraj
-    scatter(this.Pts.traj(ti).x, this.Pts.traj(ti).y, 30, ...
-        this.Visu.Color.trajs, 'filled', ...
-        'MarkerEdgeColor', 'k', ...
-        'UIContextMenu', this.Visu.cMenu);    
-end
+scatter(ce(:,1), ce(:,2), 30, ...
+    this.Visu.Color.trajs(this.tid,:), 's', 'filled', ...
+    'MarkerEdgeColor', 'k', ...
+    'UIContextMenu', this.Visu.cMenu);
+
+scatter(co(:,1), co(:,2), 30, ...
+    this.Visu.Color.trajs(this.tid,:), 'd', 'filled', ...
+    'MarkerEdgeColor', 'k', ...
+    'UIContextMenu', this.Visu.cMenu);
+
 
 if this.Visu.viewLocal
     
@@ -121,15 +134,3 @@ end
 % --- Draw & play ---------------------------------------------------------
 
 drawnow limitrate
-
-% --- Play / pause
-if this.Visu.viewPlay
-    if ti==this.ui.time.Max
-        this.ui.time.Value = this.ui.time.Min;
-    else
-        this.ui.time.Value = ti+1;
-    end
-    pause(1/this.Visu.fps);
-    
-    this.updateDisplay(varargin{:});
-end

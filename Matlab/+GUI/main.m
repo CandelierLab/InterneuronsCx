@@ -437,6 +437,7 @@ updateStudy();
 
             % Define Viewer object
             vViewer = GUI.Trajifier;
+            assignin('base', 'this', vViewer);
             
             % Properties
             vViewer.study = study;

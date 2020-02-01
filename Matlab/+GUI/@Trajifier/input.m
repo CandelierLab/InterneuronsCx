@@ -14,54 +14,60 @@ switch key
     case 'c'
         % Cut fragment
         
-        % % %         [ci, ti] = this.findClosest();
-        % ti = round(get(this.ui.time, 'Value'));
+        % Find closest fragment and trajectory
+        fid = this.getFragment();
+        if isnan(fid) || strcmp(this.Fr(fid).status, 'quarantine')
+            return
+        end
         
-        % % %         % --- New fragment
-        % % %
-        % % %         % Indexes
-        % % %         k = numel(Fr)+1;
-        % % %         I = Fr(ci).t>=ti;
-        % % %
-        % % %         Fr(k).status = 'unused';
-        % % %         Fr(k).t = Fr(ci).t(I);
-        % % %
-        % % %         Fr(k).soma.idx = Fr(ci).soma.idx(I);
-        % % %         Fr(k).soma.pos = Fr(ci).soma.pos(I,:);
-        % % %         Fr(k).soma.fluo = Fr(ci).soma.fluo(I);
-        % % %
-        % % %         Fr(k).centrosome.idx = Fr(ci).centrosome.idx(I);
-        % % %         Fr(k).centrosome.pos = Fr(ci).centrosome.pos(I,:);
-        % % %         Fr(k).centrosome.fluo = Fr(ci).centrosome.fluo(I);
-        % % %
-        % % %         Fr(k).cone.idx = Fr(ci).cone.idx(I);
-        % % %         Fr(k).cone.pos = Fr(ci).cone.pos(I,:);
-        % % %         Fr(k).cone.fluo = Fr(ci).cone.fluo(I);
-        % % %
-        % % %         % --- Trim fragment
-        % % %
-        % % %         % Indexes
-        % % %         I = Fr(ci).t<ti;
-        % % %
-        % % %         Fr(ci).t = Fr(ci).t(I);
-        % % %
-        % % %         Fr(ci).soma.idx = Fr(ci).soma.idx(I);
-        % % %         Fr(ci).soma.pos = Fr(ci).soma.pos(I,:);
-        % % %         Fr(ci).soma.fluo = Fr(ci).soma.fluo(I);
-        % % %
-        % % %         Fr(ci).centrosome.idx = Fr(ci).centrosome.idx(I);
-        % % %         Fr(ci).centrosome.pos = Fr(ci).centrosome.pos(I,:);
-        % % %         Fr(ci).centrosome.fluo = Fr(ci).centrosome.fluo(I);
-        % % %
-        % % %         Fr(ci).cone.idx = Fr(ci).cone.idx(I);
-        % % %         Fr(ci).cone.pos = Fr(ci).cone.pos(I,:);
-        % % %         Fr(ci).cone.fluo = Fr(ci).cone.fluo(I);
-        % % %
-        % % %         % --- Save and display
-        % % %
-        % % %         update3dview;
-        % % %         updateImage;
-        % % %         saveFragments;
+        ti = round(get(this.ui.time, 'Value'));
+        if ti==this.Fr(fid).t(1), return, end
+        
+        % --- New fragment
+        
+        % Indexes
+        k = numel(this.Fr)+1;
+        I = this.Fr(fid).t>=ti;
+        
+        this.Fr(k).status = 'unused';
+        this.Fr(k).t = this.Fr(fid).t(I);
+        
+        this.Fr(k).soma.idx = this.Fr(fid).soma.idx(I);
+        this.Fr(k).soma.pos = this.Fr(fid).soma.pos(I,:);
+        this.Fr(k).soma.fluo = this.Fr(fid).soma.fluo(I);
+        
+        this.Fr(k).centrosome.idx = this.Fr(fid).centrosome.idx(I);
+        this.Fr(k).centrosome.pos = this.Fr(fid).centrosome.pos(I,:);
+        this.Fr(k).centrosome.fluo = this.Fr(fid).centrosome.fluo(I);
+        
+        this.Fr(k).cone.idx = this.Fr(fid).cone.idx(I);
+        this.Fr(k).cone.pos = this.Fr(fid).cone.pos(I,:);
+        this.Fr(k).cone.fluo = this.Fr(fid).cone.fluo(I);
+        
+        % --- Trim fragment
+        
+        % Indexes
+        I = this.Fr(fid).t<ti;
+        
+        this.Fr(fid).t = this.Fr(fid).t(I);
+        
+        this.Fr(fid).soma.idx = this.Fr(fid).soma.idx(I);
+        this.Fr(fid).soma.pos = this.Fr(fid).soma.pos(I,:);
+        this.Fr(fid).soma.fluo = this.Fr(fid).soma.fluo(I);
+        
+        this.Fr(fid).centrosome.idx = this.Fr(fid).centrosome.idx(I);
+        this.Fr(fid).centrosome.pos = this.Fr(fid).centrosome.pos(I,:);
+        this.Fr(fid).centrosome.fluo = this.Fr(fid).centrosome.fluo(I);
+        
+        this.Fr(fid).cone.idx = this.Fr(fid).cone.idx(I);
+        this.Fr(fid).cone.pos = this.Fr(fid).cone.pos(I,:);
+        this.Fr(fid).cone.fluo = this.Fr(fid).cone.fluo(I);
+        
+        % --- Save and display
+        
+        this.prepareDisplay;
+        this.updateDisplay;
+%         this.saveFragments;
         
     case 'd'
         % Flashback duration
@@ -71,9 +77,12 @@ switch key
     case 'f'
         % Flashback last fragment and play
         
-        % % %         ui.time.Value = max(Fr(Traj(end)).t(1)-fbd, ui.time.Min);
-        % % %         viewPlay = true;
-        % % %         updateImage();
+        Traj = find(string({this.Fr.status})==string(this.tid));        
+        tf = this.Fr(Traj(end)).t(1);
+        this.ui.time.Value = max(tf-this.Visu.fbd, this.ui.time.Min);
+        
+        this.Visu.viewPlay = true;
+        this.updateDisplay();
         
     case 'g'
         % Global view
@@ -98,7 +107,8 @@ switch key
                 nt = this.doublons(find(this.doublons>this.ui.time.Value, 1, 'first'));
             end
             this.ui.time.Value = nt;
-            this.updateDisplay();
+            this.Visu.viewPlay = false;
+            this.doublonDisplay();
         end
         
     case 'q'
@@ -124,7 +134,7 @@ switch key
         this.updateDisplay;
         this.updateInfos;
         
-        this.saveFragments;
+%         this.saveFragments;
        
     case 'r'
         % Search trajectory
@@ -143,10 +153,14 @@ switch key
         % Save fragments
         this.saveFragments();
         
+        this.ui.action.String = "Fragments saved @ " + datestr(now, 'hh:MM:ss');
+        
     case 't'
         % New trajectory
         this.tid = this.newTrajId;
         this.updateInfos();
+        this.prepareDisplay();
+        this.updateDisplay();
         
     case 'v'
         % Framerate
@@ -180,7 +194,7 @@ switch key
         this.updateWarnings;
         this.prepareDisplay;
         this.updateDisplay;
-        this.saveFragments;
+        % this.saveFragments;
         
     case '-'
         % Remove from trajectory
@@ -197,13 +211,19 @@ switch key
         this.updateWarnings;
         this.prepareDisplay;
         this.updateDisplay;
-        this.saveFragments;
+        % this.saveFragments;
         
     case 'F'
         % Toggle fragment view
         this.Visu.viewFrag = ~this.Visu.viewFrag;
         this.prepareDisplay;
         this.updateDisplay;
+        
+    case 'S'
+        % Export trajectories
+        
+        this.exportTrajectories;
+        this.ui.action.String = "Trajectories saved @ " + datestr(now, 'hh:MM:ss');
         
     case 'T'
         % Toggle trajectory view
@@ -230,24 +250,31 @@ switch key
     case 'uparrow'
         % End of current trajectory
         
-% % %         if ~isempty(Traj)
-% % %             ui.time.Value = max(cat(1,Fr(Traj).t));
-% % %             updateImage();
-% % %         end
+        if ~isnan(this.tid)
+            Traj = find(string({this.Fr.status})==string(this.tid)); 
+            this.ui.time.Value = max(cat(1,this.Fr(Traj).t));
+            this.updateDisplay();
+        end
         
     case 'downarrow'
         % Beginning of current trajectory
         
-% % %         if ~isempty(Traj)
-% % %             ui.time.Value = min(cat(1,Fr(Traj).t));
-% % %             updateImage();
-% % %         end
+        if ~isnan(this.tid)
+            Traj = find(string({this.Fr.status})==string(this.tid)); 
+            this.ui.time.Value = min(cat(1,this.Fr(Traj).t));
+            this.updateDisplay();
+        end
         
     case 'pagedown'
         % Rewind
         this.ui.time.Value = this.ui.time.Min;
         this.updateDisplay();
     
+    case 'pageup'
+        % First unused fragment
+        this.ui.time.Value = min(cellfun(@min, {this.Fr(string({this.Fr.status})=="unused").t}));
+        this.updateDisplay();
+        
     case 'middleClick'
         % Select fragment (among visible)
         
@@ -265,12 +292,68 @@ switch key
         
         tmp = this.getFragment();
         if isnan(tmp) || ~isnumeric(this.Fr(tmp).status)
+            this.ui.action.String = "Fragment not in a trajectory";
             return
         end
         this.tid = this.Fr(tmp).status;
         
         this.updateInfos;
+        this.updateWarnings;
         this.ui.action.String = "Trajectory " + this.tid + " selected";
+        this.prepareDisplay();
+        this.updateDisplay();
+        
+    case 'centrosome'
+        % Define point as centrosome
+    
+        % Find closest fragment and trajectory
+        ti = round(get(this.ui.time, 'Value'));
+        fid = this.getFragment();
+        if isnan(fid), return; end
+        
+        i = find(this.Fr(fid).t==ti);
+        this.Fr(fid).centrosome.idx{i} = this.Fr(fid).soma.idx{i};
+        this.Fr(fid).centrosome.pos(i,:) = this.Fr(fid).soma.pos(i,:);
+        this.Fr(fid).centrosome.fluo(i) = this.Fr(fid).soma.fluo(i);
+        
+        this.Fr(fid).soma.idx{i} = [];
+        this.Fr(fid).soma.pos(i,:) = [NaN NaN];
+        this.Fr(fid).soma.fluo(i) = NaN;
+
+        this.updateWarnings;
+        this.updateInfos;
+        if isempty(this.doublons)
+            this.prepareDisplay;
+            this.updateDisplay;
+        else
+            this.input('n');
+        end
+
+    case 'cone'
+        % Define point as cone
+    
+        % Find closest fragment and trajectory
+        ti = round(get(this.ui.time, 'Value'));
+        fid = this.getFragment();
+        if isnan(fid), return; end
+        
+        i = find(this.Fr(fid).t==ti);
+        this.Fr(fid).cone.idx{i} = this.Fr(fid).soma.idx{i};
+        this.Fr(fid).cone.pos(i,:) = this.Fr(fid).soma.pos(i,:);
+        this.Fr(fid).cone.fluo(i) = this.Fr(fid).soma.fluo(i);
+        
+        this.Fr(fid).soma.idx{i} = [];
+        this.Fr(fid).soma.pos(i,:) = [NaN NaN];
+        this.Fr(fid).soma.fluo(i) = NaN;
+
+        this.updateWarnings;
+        this.updateInfos;
+        if isempty(this.doublons)
+            this.prepareDisplay;
+            this.updateDisplay;
+        else
+            this.input('n');
+        end
         
     otherwise
         

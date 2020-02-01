@@ -12,7 +12,7 @@ switch numel(tI)
 end
 
 % --- Current trajectory
-
+ 
 s = "Current trajectory " + this.tid;
 I = find(cellfun(@(x) isnumeric(x) && x==this.tid, {this.Fr.status}));
 if numel(I)

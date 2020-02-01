@@ -10,19 +10,15 @@ tic
 nt = this.Images.number;
 
 tI = unique([this.Fr(cellfun(@isnumeric, {this.Fr.status})).status]);
-nTraj = numel(tI);
+nTraj = max(numel(tI), this.tid);
 
 % --- Trajectories --------------------------------------------------------
 
-this.Visu.Color.trajs = lines(nTraj);
+this.Visu.Color.trajs = [lines(nTraj-1) ; 1 0.41 0.7];
 
 % --- Local view ----------------------------------------------------------
 
-if this.Visu.viewLocal
-   
-    
-    
-else
+if ~this.Visu.viewLocal
     this.Visu.crop = struct('x1', 1, 'x2', this.Images.Width, ...
         'y1', 1, 'y2', this.Images.Height);
 end
@@ -119,6 +115,7 @@ for i = 1:numel(this.Fr)
             
         otherwise
             for j = 1:numel(this.Fr(i).t)
+                if any(isnan(this.Fr(i).soma.pos(j,1))), continue; end
                 this.Pts.traj(this.Fr(i).t(j)).x(this.Fr(i).status) = this.Fr(i).soma.pos(j,1);
                 this.Pts.traj(this.Fr(i).t(j)).y(this.Fr(i).status) = this.Fr(i).soma.pos(j,2);
             end

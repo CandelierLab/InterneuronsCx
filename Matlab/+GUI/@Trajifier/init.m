@@ -8,6 +8,7 @@ function init(this, varargin)
 DS = dataSource;
 this.File.images = [DS.data this.study filesep this.run filesep this.run '.tiff'];
 this.File.fragments = [DS.data this.study filesep this.run filesep 'Files' filesep 'Fragments.mat'];
+this.File.trajectories = [DS.data this.study filesep this.run filesep 'Files' filesep 'Trajectories.mat'];
 
 % Get image info
 tmp = imfinfo(this.File.images);
@@ -26,7 +27,7 @@ this.tid = this.newTrajId;
 this.Window.menuWidth = 400;
 this.Visu.Color.fragment = [1 1 1]*0.6; %[84 153 199]/255;
 this.Visu.Color.selected = [203 67 53]/255;
-this.Visu.Color.quarantine = [0 0 0]; %[0.86 0.46 0.2];
+this.Visu.Color.quarantine = [0 0 0];
 this.Visu.frameFormat = ['%0' num2str(ceil(log10(this.Images.number))) 'i'];
 this.Visu.aspRatio = this.Images.number/this.Images.Width;
 this.Visu.alim3d = [1 this.Images.Height 1 this.Images.Width 1 this.Images.number];
@@ -104,7 +105,7 @@ this.ui.prepareTime = uicontrol('style', 'text', ...
 
 this.ui.warnings = uicontrol('style', 'text', ...
     'FontName', 'Courier New', 'FontSize', 11, 'HorizontalAlignment', 'left', ...
-    'backgroundColor', this.Window.color, 'ForegroundColor', this.Visu.Color.quarantine, ...
+    'backgroundColor', this.Window.color, 'ForegroundColor', [0.86 0.46 0.2], ...
     'position', [0 0 1 1]);
 
 % --- Controls ------------------------------------------------------------
@@ -133,7 +134,7 @@ this.ui.time = uicontrol('style','slider', 'position', [0 0 1 1], ...
 this.Visu.cMenu = uicontextmenu(this.Viewer);
 
 % Create child menu items for the uicontextmenu
-uimenu(this.Visu.cMenu, 'Label', 'soma', 'Callback', @contextMenu);
+% uimenu(this.Visu.cMenu, 'Label', 'soma', 'Callback', @contextMenu);
 uimenu(this.Visu.cMenu, 'Label', 'centrosome', 'Callback', @contextMenu);
 uimenu(this.Visu.cMenu, 'Label', 'cone', 'Callback', @contextMenu);
 
@@ -182,7 +183,7 @@ this.updateDisplay();
     function contextMenu(varargin)
        
         this.input(varargin{1}.Text);
-        this.ui.action.String = varargin{1}.Text;
+        % this.ui.action.String = varargin{1}.Text;
                 
     end
 
@@ -213,7 +214,7 @@ this.updateDisplay();
             end
             
             if ismember(event.Key, {'leftarrow', 'rightarrow', 'uparrow', ...
-                    'downarrow', 'pagedown', 'delete'})
+                    'downarrow', 'pageup', 'pagedown', 'delete'})
                 this.input(event.Key);
             else
                 this.input(event.Character);
