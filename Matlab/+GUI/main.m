@@ -10,7 +10,7 @@ warning('off', 'images:imshow:magnificationMustBeFitForDockedFigure');
 prod = false;
 
 % Intensity factor
-intFactor = 3;
+intFactor = 5;
 
 % Tracking
 maxDist = 40;
@@ -98,7 +98,7 @@ pstudy = uicontrol('style', 'popupmenu', ...
     'position', [10 15 150 20], ...
     'string', Studies, 'FontName', 'Courier New', 'FontSize', 10, ...
     'Callback', @updateStudy, ...
-    'Value', 2);
+    'Value', 1);
 
 prun = uicontrol('style', 'popupmenu', ...
     'position', [170 15 150 20], ...
@@ -255,8 +255,7 @@ updateStudy();
         
         % --- Processing
         
-        Shapes = struct('t', {}, 'soma', {}, 'centrosome', {}, 'cone', {});
-        empty = struct('idx', [], 'pos', NaN(1,2), 'fluo', NaN);
+        Shapes = struct('t', {}, 'idx', {});
         wb = waitbar(0, '', 'Name', 'Detection');
 
         for i = 1:Nimg
@@ -270,9 +269,7 @@ updateStudy();
                
                 k = numel(Shapes)+1;                
                 Shapes(k).t = i;
-                Shapes(k).soma = B(j);
-                Shapes(k).centrosome = empty;
-                Shapes(k).cone = empty;
+                Shapes(k).idx = B(j).idx;
                 
             end
         
@@ -295,12 +292,25 @@ updateStudy();
     function cInspector(varargin)
         
         if isempty(vViewer)
-            vViewer = GUI.Inspector('Main', vMain, 'study', study, 'run', run, ...
-                'color', Wcolor, 'position', viewPos, 'intensityFactor', intFactor);
+            
+            % Define Viewer object
+            vViewer = GUI.Inspector;
+            assignin('base', 'this', vViewer);
+            
+            % Properties
+            vViewer.study = study;
+            vViewer.run = run;
+            vViewer.Window.position = viewPos;
+            vViewer.Window.color = Wcolor;
+            vViewer.Visu.intensityFactor = intFactor;
+            
+            % Init viewer
+            vViewer.init;
+            
         else
             closeViewer();
         end
-        
+
     end
 
     % =====================================================================
@@ -432,8 +442,6 @@ updateStudy();
     function cTrajifier(varargin)
 
         if isempty(vViewer)
-%             vViewer = GUI.Trajifier('Main', vMain, 'study', study, 'run', run, ...
-%                 'color', Wcolor, 'position', viewPos, 'intensityFactor', intFactor);
 
             % Define Viewer object
             vViewer = GUI.Trajifier;
@@ -452,7 +460,6 @@ updateStudy();
         else
             closeViewer();
         end
-        
         
     end
 

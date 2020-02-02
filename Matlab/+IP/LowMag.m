@@ -33,10 +33,8 @@ BW = bwpropfilt(BW, 'Area', [50 Inf]);
 
 % --- Object extraction
 
-R = regionprops(BW, Res, {'PixelIdxList', 'WeightedCentroid', 'MeanIntensity'});
+R = regionprops(BW, Res, {'PixelIdxList'});
 
 % === Output ==============================================================
 
-Out = struct('idx', {R.PixelIdxList}, ...
-    'pos', {R.WeightedCentroid}, ...
-    'fluo', {R.MeanIntensity});
+Out = struct('idx', {R.PixelIdxList});

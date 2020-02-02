@@ -39,8 +39,8 @@ BW = bwmorph(BW, 'skel', 1);
 
 % --- Object extraction
 
-R = regionprops(BW, Img.^2, {'PixelIdxList', 'WeightedCentroid'});
+R = regionprops(BW, Img.^2, {'PixelIdxList'});
 
 % === Output ==============================================================
 
-Out = struct('idx', {R.PixelIdxList}, 'pos', {R.WeightedCentroid});
+Out = struct('idx', {R.PixelIdxList});
