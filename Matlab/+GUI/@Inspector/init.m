@@ -1,5 +1,5 @@
 function init(this, varargin)
-%INIT Trajifier initialization
+%INIT Inspector initialization
 %   - Figure creation and widget placement
 %   - Define callbacks and events
 
@@ -15,28 +15,19 @@ tmp = imfinfo(this.File.images);
 this.Images = tmp(1);
 this.Images.number = numel(tmp);
 
-% Load shapes
-this.loadShapes;
-
-% Cells
-this.Cell = struct('t', {}, 'idx', {}, 'soma', {}, 'centrosome', {}, 'cones', {});
+% Load shapes & cells
+this.load;
 
 % === Figure ==============================================================
 
 % --- Parameters
 
 this.Window.menuWidth = 400;
-this.Visu.Color.shape = [84 153 199]/255;
-% this.Visu.Color.selected = [203 67 53]/255;
-% this.Visu.Color.quarantine = [0 0 0];
 this.Visu.frameFormat = ['%0' num2str(ceil(log10(this.Images.number))) 'i'];
 this.Visu.fps = 50;
 
 % Views
 this.Visu.viewPlay = false;
-
-% Handles
-% this.Visu.hFr3 = [];
 
 % --- Figure
 
@@ -122,7 +113,7 @@ this.Viewer.WindowButtonDownFcn = @mouseClick;
 this.Viewer.WindowButtonMotionFcn = @mouseMove;
 addlistener(this.ui.time, 'Value', 'PostSet', @this.updateDisplay);
 
-this.initShapes();
+this.loadTime();
 this.updateInfos();
 this.updateDisplay();
 

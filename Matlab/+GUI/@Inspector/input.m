@@ -1,7 +1,6 @@
 function input(this, key, value)
 %INPUT User input
 
-
 switch key
        
     case 'c'
@@ -14,16 +13,17 @@ switch key
         p1 = l.Position(1,:);
         p2 = l.Position(2,:);
         
-        D2 = NaN(numel(this.Sh),1);
-        for k = 1:numel(this.Sh)
-            [i,j] = ind2sub([this.Images.Height, this.Images.Width], this.Sh(k).idx);
+        D2 = NaN(numel(this.Blob),1);
+        for k = 1:numel(this.Blob)
+            [i,j] = ind2sub([this.Images.Height, this.Images.Width], this.Blob(k).idx);
             D2(k) = mean((j-p1(1)).^2  + (i-p1(2)).^2 + (j-p2(1)).^2  + (i-p2(2)).^2);            
         end
-        [~, sid] = min(D2);
+        [~, bid] = min(D2);
+        sid = this.Blob(bid).sid;
         
         % --- Cut shape
         
-        [i,j] = ind2sub([this.Images.Height, this.Images.Width], this.Sh(sid).idx);
+        [i,j] = ind2sub([this.Images.Height, this.Images.Width], this.Blob(bid).idx);
         U = [j-p1(1) i-p1(2) zeros(size(i))];
         V = repmat([p2-p1 0], [numel(i) 1]);
         W = cross(U, V);
@@ -37,42 +37,83 @@ switch key
             return;
         end
         
-        % New shape
-        nid = numel(this.Sh)+1;
-        this.Sh(nid).t = this.Sh(sid).t;
-        this.Sh(nid).idx = this.Sh(sid).idx(I2);
+        % --- New shape
         
-        this.Sh(nid).sid = numel(this.Shapes)+1;
-        nid = this.Sh(nid).sid;
-        this.Shapes(nid).t = this.Sh(sid).t;
-        this.Shapes(nid).idx = this.Sh(sid).idx(I2);
+        nbid = numel(this.Blob)+1;
+        nsid = numel(this.Shape)+1;
         
-        % Update shape
-        this.Sh(sid).idx = this.Sh(sid).idx(I1);
+        % New Shape
+        this.Shape(nsid).t = this.Shape(sid).t;
+        this.Shape(nsid).idx = this.Blob(bid).idx(I2);
         
-        numel(this.Shapes)
-        this.Sh(sid)
-        this.Sh(sid).idx(I1)
+        % New blob
+        this.Blob(nbid).sid = nsid;
+        this.Blob(nbid).idx = this.Blob(bid).idx(I2);
         
-        this.Shapes(this.Sh(sid).sid).idx = this.Sh(sid).idx(I1);
+        % --- Update current
         
-        % --- Display
+        % Shape
+        this.Shape(sid).idx = this.Blob(bid).idx(I1);
         
-        this.computeShape(["contour", "pos"], [sid nid]);
+        % Blob
+        this.Blob(bid).idx = this.Blob(bid).idx(I1);
         
+        % --- Update display
+        
+        this.compute('Blob', ["pos", "contour"], [bid nbid]);        
         this.updateInfos;
         this.updateDisplay;
 
+    case 'k'
+        % Cell to shape (unit to blob)
+        
+        % --- Get unit id
+        
+        p = this.mousePosition.image;
+        all = [this.Unit.all];
+        pos = [all.pos];
+        [~, uid] = min(([pos.x]-p(1)).^2 + ([pos.y]-p(2)).^2);
+        
+        % --- Convert Unit to shape
+        
+        sid = numel(this.Shape)+1;
+        this.Shape(sid).t = this.ui.time.Value;
+        this.Shape(sid).idx = this.Unit(uid).all.idx;
+        
+        % --- Convert Unit to blob
+        
+        bid = numel(this.Blob)+1;
+        this.Blob(bid).sid = sid;
+        this.Blob(bid).idx = this.Unit(uid).all.idx;
+        this.Blob(bid).pos = this.Unit(uid).all.pos;
+        this.Blob(bid).contour = this.Unit(uid).all.contour;
+                
+        % --- Delete cell & unit
+        
+        this.Cell(this.Unit(uid).cid) = [];
+        this.Unit(uid) = [];
+        
+        % Update subsequent indexing
+        for i = uid:numel(this.Unit)
+            this.Unit(i).cid = this.Unit(i).cid-1;
+        end
+        
+        % --- Display
+        
+        this.updateInfos;
+        this.updateDisplay;
+        
     case 'n'
         % New cell
 
         % --- Check former cell is complete
-        if ~isnan(this.cid)
+        if ~isnan(this.uid)
             this.input('rightClick');
         end
         
-        this.cid = numel(this.Cell)+1;
-        this.Cell(this.cid).t = this.ui.time.Value;
+        this.uid = numel(this.Unit)+1;
+        this.Unit(this.uid).t = this.ui.time.Value;
+        this.Unit(this.uid).all = struct('idx', [], 'pos', [], 'contour', []);
         this.step = 'soma';
         this.updateInfos;
         
@@ -88,7 +129,7 @@ switch key
         % Time -1
         this.ui.time.Value = max(this.ui.time.Value-1, this.ui.time.Min);
         
-        this.initShapes;
+        this.loadTime;
         this.updateInfos;
         this.updateDisplay();
         
@@ -96,13 +137,16 @@ switch key
         % Time +1
         this.ui.time.Value = min(this.ui.time.Value+1, this.ui.time.Max);
         
-        this.initShapes;
+        this.loadTime;
         this.updateInfos;
         this.updateDisplay();
         
     case 'pagedown'
         % Rewind
         this.ui.time.Value = this.ui.time.Min;
+        
+        this.loadTime;
+        this.updateInfos;
         this.updateDisplay();
     
     case 'pageup'
@@ -111,60 +155,81 @@ switch key
 % % %         this.updateDisplay();
         
     case 'leftClick'
-        % Split shapes
+        % Cell definition
         
-        if ~isnan(this.cid)
+        if ~isnan(this.uid)
         
             % Get closest
             p = this.mousePosition.image;
-            [~, mi] = min((p(1)-[this.Sh.x]).^2 + (p(2)-[this.Sh.y]).^2);
+            pos = [this.Blob.pos];
+            [~, bid] = min((p(1)-[pos.x]).^2 + (p(2)-[pos.y]).^2);
             
             switch this.step
                 
                 case 'soma'
                      
-                    this.Cell(this.cid).soma = struct(...
-                        'idx', this.Sh(mi).idx, ...
-                        'pos', [this.Sh(mi).x this.Sh(mi).y]);
+                    this.Unit(this.uid).soma = struct(...
+                        'idx', this.Blob(bid).idx, ...
+                        'pos', this.Blob(bid).pos, ...
+                        'contour',  this.Blob(bid).contour);
                     
                     this.step = 'centrosome';
                     
                 case 'centrosome'
 
-                    this.Cell(this.cid).centrosome = struct(...
-                        'idx', this.Sh(mi).idx, ...
-                        'pos', [this.Sh(mi).x this.Sh(mi).y]);
+                    this.Unit(this.uid).centrosome = struct(...
+                        'idx', this.Blob(bid).idx, ...
+                        'pos', this.Blob(bid).pos, ...
+                        'contour',  this.Blob(bid).contour);
                     
                     this.step = 'cones';
                     
                 case 'cones'
                     
-                    if isempty(this.Cell(this.cid).cones)
-                        this.Cell(this.cid).cones = struct(...
-                            'idx', this.Sh(mi).idx, ...
-                            'pos', [this.Sh(mi).x this.Sh(mi).y]);
+                    if isempty(this.Unit(this.uid).cones)
+                        this.Unit(this.uid).cones = struct(...
+                            'idx', this.Blob(bid).idx, ...
+                            'pos', this.Blob(bid).pos, ...
+                            'contour',  this.Blob(bid).contour);
                     else
-                        id = numel(this.Cell(this.cid).cones)+1;
-                        this.Cell(this.cid).cones(id).idx = this.Sh(mi).idx;
-                        this.Cell(this.cid).cones(id).pos = [this.Sh(mi).x this.Sh(mi).y];
+                        id = numel(this.Unit(this.uid).cones)+1;
+                        this.Unit(this.uid).cones(id).idx = this.Blob(bid).idx;
+                        this.Unit(this.uid).cones(id).pos = this.Blob(bid).pos;
+                        this.Unit(this.uid).cones(id).contour = this.Blob(bid).contour;
                     end
                     
             end
             
-            this.Cell(this.cid).idx = union(this.Cell(this.cid).idx, ...
-                        this.Sh(mi).idx);
-                    
-            this.Sh(mi) = [];
+            % --- Update 'all' in units
+            
+            this.Unit(this.uid).all.idx = union(this.Unit(this.uid).all.idx, ...
+                this.Blob(bid).idx);
+            this.compute('Unit', ["pos", "contour"], this.uid);
+            
+            % --- Remove blob
+            
+            % Remove shape
+            this.Shape(this.Blob(bid).sid) = [];
+            
+            % Remove blob
+            this.Blob(bid) = [];
        
+            % Update subsequent blob indexing
+            for i = bid:numel(this.Blob)
+                this.Blob(i).sid = this.Blob(i).sid-1;
+            end
+            
+            % --- Display
+            
             this.updateInfos;
             this.updateDisplay;
             
         end
     
     case 'middleClick'
-        % Skip selection (cell)
+        % Skip selection (cell definition)
         
-        if ~isnan(this.cid)
+        if ~isnan(this.uid)
             switch this.step
                 case 'soma', this.step = 'centrosome';
                 case 'centrosome', this.step = 'cones';
@@ -176,18 +241,56 @@ switch key
     case 'rightClick'
         % End cell selection
         
-        if ~isnan(this.cid)
-                   
-            if isempty(this.Cell(this.cid).idx)
-                this.Cell(this.cid) = [];
+        if ~isnan(this.uid)
+                
+            % --- Store cell
+            
+            if isempty(this.Unit(this.uid).all.idx)
+                this.Unit(this.uid) = [];
+            else
+                ncid = numel(this.Cell)+1;
+                this.Cell(ncid).t = this.ui.time.Value;
+                this.Cell(ncid).all = this.Unit(this.uid).all;
+                this.Cell(ncid).soma = this.Unit(this.uid).soma;
+                this.Cell(ncid).centrosome = this.Unit(this.uid).centrosome;
+                this.Cell(ncid).cones = this.Unit(this.uid).cones;
             end
             
             % --- Updates
-            this.cid = NaN;
+            
+            this.uid = NaN;
             this.updateInfos;
             this.updateDisplay;
             
         end
+        
+    case 'delete'
+        % Delete shape
+        
+        % --- Get blob id
+        
+        p = this.mousePosition.image;
+        pos = [this.Blob.pos];
+        [~, bid] = min(([pos.x]-p(1)).^2 + ([pos.y]-p(2)).^2);
+                
+        % --- Delete shape
+        
+        this.Shape(this.Blob(bid).sid) = [];
+        
+        % --- Delete blob
+        
+        this.Blob(bid) = [];
+        
+        % --- Reassign blob subsequent indexes
+        
+        for i = bid:numel(this.Blob)
+            this.Blob(i).sid = this.Blob(i).sid-1;
+        end
+        
+        % --- Display
+        
+        this.updateInfos;
+        this.updateDisplay;
         
     otherwise
         

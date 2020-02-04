@@ -18,12 +18,13 @@ classdef Inspector < handle
         mousePosition = struct('image', NaN(2,1))
                 
         % Shapes
-        Shapes
-        Sh
+        Shape
+        Blob
         
         % Cells
         Cell
-        cid = NaN;
+        Unit
+        uid = NaN;
         step = '';
         
     end

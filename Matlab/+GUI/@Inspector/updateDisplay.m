@@ -24,73 +24,88 @@ this.ui.title.String = ['Frame ' num2str(ti, this.Visu.frameFormat) ' / ' num2st
 
 % --- Draw contours
 
-Scm = hsv(numel(this.Sh));
+Scm = hsv(numel(this.Blob));
 
-for i = 1:numel(this.Sh)
+for i = 1:numel(this.Blob)
     
-    plot(this.Sh(i).contour.x, this.Sh(i).contour.y, '-', ...
+    plot(this.Blob(i).contour.x{1}, this.Blob(i).contour.y{1}, '-', ...
         'color', Scm(i,:), 'Linewidth', 1)
     
-    text(this.Sh(i).contour.x(1), this.Sh(i).contour.y(1), num2str(i), ...
-        'color', 'w');
+    text(this.Blob(i).pos.x, this.Blob(i).pos.y, num2str(i), ...
+        'color', 'k', 'backgroundColor', 'w', ...
+        'fontname', 'Courier New', 'FontSize', 8, ...
+        'margin', 1, 'edgecolor', Scm(i,:));
 
 end
 
 % --- Cells ---------------------------------------------------------------
 
-Ccm = jet(numel(this.Cell));
+Ucm = jet(numel(this.Unit));
 
-for i = 1:numel(this.Cell)
+for i = 1:numel(this.Unit)
     
     % --- Soma
     
-    if isempty(this.Cell(i).soma)
+    if isempty(this.Unit(i).soma)
         xSo = NaN;
         ySo = NaN;
     else
-        xSo = this.Cell(i).soma.pos(1);
-        ySo = this.Cell(i).soma.pos(2);
+        xSo = this.Unit(i).soma.pos.x;
+        ySo = this.Unit(i).soma.pos.y;
     end
     
     % --- Centrosome
     
-    if isempty(this.Cell(i).centrosome)
+    if isempty(this.Unit(i).centrosome)
         xCe = NaN;
         yCe = NaN;
     else
-        xCe = this.Cell(i).centrosome.pos(1);
-        yCe = this.Cell(i).centrosome.pos(2);
+        xCe = this.Unit(i).centrosome.pos.x;
+        yCe = this.Unit(i).centrosome.pos.y;
     end
     
-    if isempty(this.Cell(i).cones)
+    if isempty(this.Unit(i).cones)
         xCo = [];
         yCo = [];
     else
-        xCo = NaN(numel(this.Cell(i).cones),1);
-        yCo = NaN(numel(this.Cell(i).cones),1);
-        for j = 1:numel(this.Cell(i).cones)
-            xCo(j) = this.Cell(i).cones(j).pos(1);
-            yCo(j) = this.Cell(i).cones(j).pos(2);
+        xCo = NaN(numel(this.Unit(i).cones),1);
+        yCo = NaN(numel(this.Unit(i).cones),1);
+        for j = 1:numel(this.Unit(i).cones)
+            xCo(j) = this.Unit(i).cones(j).pos.x;
+            yCo(j) = this.Unit(i).cones(j).pos.y;
         end
     end
     
-    % Markers
-    scatter(xSo, ySo, 200, 'MarkerFaceColor', Ccm(i,:), 'MarkerEdgeColor', 'k');
-    scatter(xCe, yCe, 200, 'MarkerFaceColor', Ccm(i,:), 'MarkerEdgeColor', 'k');
-    scatter(xCo, yCo, 200, 'MarkerFaceColor', Ccm(i,:), 'MarkerEdgeColor', 'k');
+    % --- Links
     
-    text(xSo-2, ySo+2, 's', 'color', 'k');
+% % %     % Soma-centrosome
+% % %     plot([xSo xCe], [ySo yCe], '-', 'color', Ucm(i,:), 'Linewidth', 2);
+% % %     
+% % %     % Centrosome-cones
+% % %     for k = 1:numel(xCo)
+% % %         plot([xCe xCo(k)], [yCe yCo(k)], '-', 'color', Ucm(i,:), 'Linewidth', 2);
+% % %     end
     
-    % --- Centrosome
+    % --- Patch
     
-    scatter(this.Cell(i).soma.pos(1), this.Cell(i).soma.pos(2), 200, ...
-        'MarkerFaceColor', Ccm(i,:), 'MarkerEdgeColor', 'k');
+    for k = 1:numel(this.Unit(i).all.contour.x) 
+        patch(this.Unit(i).all.contour.x{k}, this.Unit(i).all.contour.y{k}, Ucm(i,:), ...
+            'EdgeColor', Ucm(i,:), ...
+            'FaceAlpha', 0.3);
+    end
+    
 
-    text(this.Cell(i).soma.pos(1)-2, this.Cell(i).soma.pos(2)+2, ...
-        's', 'color', 'k');
+    % --- Markers
     
-    % plot([this.Cell(i).soma.pos(1) this.Cell(i).centrosome.pos(1)], [], 'y.-');
-
+    scatter([xSo ; xCe ; xCo], [ySo ; yCe ; yCo], 200, ...
+        'MarkerFaceColor', 'w', 'MarkerEdgeColor', 'k');
+    
+    % --- Texts
+    
+    text(xSo-3.5, ySo+1, 'So', 'color', 'k', 'FontSize', 7);
+    text(xCe-3.5, yCe+1, 'Ce', 'color', 'k', 'FontSize', 7);
+    text(xCo-3.5, yCo+1, 'Co', 'color', 'k', 'FontSize', 7);
+    
 end
 
 % --- Draw & play ---------------------------------------------------------

@@ -1,5 +1,5 @@
 function saveShapes(this)
 
-Shapes = this.Shapes;
-save(this.File.shapes, 'Shapes');
+Shape = this.Shape;
+save(this.File.shapes, 'Shape');
 

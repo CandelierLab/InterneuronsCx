@@ -1,29 +1,38 @@
 function updateInfos(this, c)
 
-% --- Number of cells -----------------------------------------------------
+% --- Number of Blobs & cells ---------------------------------------------
 
-switch numel(this.Cell)
+switch numel(this.Blob)
     case 0
-        S = "No cell defined";
+        S = "No shape defined";
     case 1
-        S = "1 cell defined";
+        S = "1 shape defined";
     otherwise
-        S = numel(this.Cell) + " cells defined";
+        S = numel(this.Blob) + " shapes defined";
+end
+
+switch numel(this.Unit)
+    case 0
+        S(end+1) = "No cell defined";
+    case 1
+        S(end+1) = "1 cell defined";
+    otherwise
+        S(end+1) = numel(this.Unit) + " cells defined";
 end
 
 S(end+1) = "___________________________________" + newline;
 
 % --- Current cell --------------------------------------------------------
 
-if isnan(this.cid)
+if isnan(this.uid)
     S(end+1) = "No current cell";
 else
-    S(end+1) = "Current cell [" + this.cid + "]"; 
+    S(end+1) = "Current cell [" + this.uid + "]"; 
 end
 
 % --- Cell overview -------------------------------------------------------
 
-if ~isnan(this.cid)
+if ~isnan(this.uid)
     
     % --- Soma
     
@@ -33,12 +42,12 @@ if ~isnan(this.cid)
         s = "* Soma";
     end
     
-    if isempty(this.Cell(this.cid).soma)
+    if isempty(this.Unit(this.uid).soma)
         S(end+1) = s + " - undefined";
         nSo = 0;
     else
-        S(end+1) = s + " - " + num2str(numel(this.Cell(this.cid).soma.idx)) + " pixels";
-        nSo = numel(this.Cell(this.cid).soma.idx);
+        S(end+1) = s + " - " + num2str(numel(this.Unit(this.uid).soma.idx)) + " pixels";
+        nSo = numel(this.Unit(this.uid).soma.idx);
     end
 
     % --- Centrosome
@@ -49,12 +58,12 @@ if ~isnan(this.cid)
         s = "* Centrosome";
     end
     
-    if isempty(this.Cell(this.cid).centrosome)
+    if isempty(this.Unit(this.uid).centrosome)
         S(end+1) = s + " - undefined";
         nCe = 0;
     else
-        S(end+1) = s + " - " + num2str(numel(this.Cell(this.cid).centrosome.idx)) + " pixels";
-        nCe = numel(this.Cell(this.cid).centrosome.idx);
+        S(end+1) = s + " - " + num2str(numel(this.Unit(this.uid).centrosome.idx)) + " pixels";
+        nCe = numel(this.Unit(this.uid).centrosome.idx);
     end
 
     % --- Cones
@@ -66,17 +75,17 @@ if ~isnan(this.cid)
     end
     
     nCo = 0;
-    if isempty(this.Cell(this.cid).cones)
+    if isempty(this.Unit(this.uid).cones)
         S(end+1) = s + " - undefined";
     else
         S(end+1) = s + ":";
-        for i = 1:numel(this.Cell(this.cid).cones)
-            S(end+1) = " + " + num2str(numel(this.Cell(this.cid).cones(i).idx)) + " pixels";
-            nCo = nCo + numel(this.Cell(this.cid).cones(i).idx);
+        for i = 1:numel(this.Unit(this.uid).cones)
+            S(end+1) = " + " + num2str(numel(this.Unit(this.uid).cones(i).idx)) + " pixels";
+            nCo = nCo + numel(this.Unit(this.uid).cones(i).idx);
         end
     end
     
-    nTot = numel(this.Cell(this.cid).idx);
+    nTot = numel(this.Unit(this.uid).all.idx);
     nNa = nTot - nSo - nCe - nCo;
     
     S(end+1) = newline + "Unassigned: " + nNa + " pixels";

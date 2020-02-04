@@ -269,7 +269,7 @@ updateStudy();
         
         % --- Processing
         
-        Shapes = struct('t', {}, 'idx', {});
+        Shape = struct('t', {}, 'idx', {});
         wb = waitbar(0, '', 'Name', 'Detection');
 
         for i = 1:Nimg
@@ -281,9 +281,9 @@ updateStudy();
             
             for j = 1:numel(B)
                
-                k = numel(Shapes)+1;                
-                Shapes(k).t = i;
-                Shapes(k).idx = B(j).idx;
+                k = numel(Shape)+1;                
+                Shape(k).t = i;
+                Shape(k).idx = B(j).idx;
                 
             end
         
@@ -295,7 +295,7 @@ updateStudy();
         % --- Save
         
         waitbar(1, wb, 'Saving');
-        save(fShapes, 'Shapes');
+        save(fShapes, 'Shape');
         
         close(wb);
         updateRun();
