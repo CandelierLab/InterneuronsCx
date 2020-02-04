@@ -226,12 +226,26 @@ updateStudy();
     % =====================================================================
     function cViewer(varargin)
         
-        if isempty(vViewer)
-            vViewer = GUI.viewer_Raw('Main', vMain, 'study', study, 'run', run, ...
-                'color', Wcolor, 'position', viewPos, 'intensityFactor', intFactor);
+         if isempty(vViewer)
+            
+            % Define Viewer object
+            vViewer = GUI.SimpleViewer;
+            assignin('base', 'this', vViewer);
+            
+            % Properties
+            vViewer.study = study;
+            vViewer.run = run;
+            vViewer.Window.position = viewPos;
+            vViewer.Window.color = Wcolor;
+            vViewer.Visu.intensityFactor = intFactor;
+            
+            % Init viewer
+            vViewer.init;
+            
         else
             closeViewer();
         end
+
         
     end
     

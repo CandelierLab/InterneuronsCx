@@ -2,9 +2,14 @@ function initShapes(this)
 %initshapes Initializes the Sh property at each time step.
 
 ti = round(get(this.ui.time, 'Value'));
-this.Sh = this.Shapes([this.Shapes.t]==ti);
 
 % --- Get contours
+
+I = find([this.Shapes.t]==ti);
+this.Sh = this.Shapes(I);
+for i = 1:numel(I)
+    this.Sh(i).sid = I(i);
+end
 
 this.computeShape(["contour", "pos"]);
 

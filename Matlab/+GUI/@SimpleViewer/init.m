@@ -1,5 +1,5 @@
 function init(this, varargin)
-%INIT Trajifier initialization
+%INIT Viewer initialization
 %   - Figure creation and widget placement
 %   - Define callbacks and events
 
@@ -7,43 +7,30 @@ function init(this, varargin)
 
 DS = dataSource;
 this.File.images = [DS.data this.study filesep this.run filesep this.run '.tiff'];
-this.File.shapes = [DS.data this.study filesep this.run filesep 'Files' filesep 'Shapes.mat'];
-this.File.cells = [DS.data this.study filesep this.run filesep 'Files' filesep 'Cells.mat'];
 
 % Get image info
 tmp = imfinfo(this.File.images);
 this.Images = tmp(1);
 this.Images.number = numel(tmp);
 
-% Load shapes
-this.loadShapes;
-
-% Cells
-this.Cell = struct('t', {}, 'idx', {}, 'soma', {}, 'centrosome', {}, 'cones', {});
-
 % === Figure ==============================================================
 
 % --- Parameters
 
 this.Window.menuWidth = 400;
-this.Visu.Color.shape = [84 153 199]/255;
-% this.Visu.Color.selected = [203 67 53]/255;
-% this.Visu.Color.quarantine = [0 0 0];
 this.Visu.frameFormat = ['%0' num2str(ceil(log10(this.Images.number))) 'i'];
+
 this.Visu.fps = 50;
 
 % Views
 this.Visu.viewPlay = false;
 
-% Handles
-% this.Visu.hFr3 = [];
-
 % --- Figure
 
-this.Viewer = findobj('type', 'figure', 'name', 'Inspector');
+this.Viewer = findobj('type', 'figure', 'name', 'Viewer');
 
 if isempty(this.Viewer)
-    this.Viewer = figure('name', 'Inspector');
+    this.Viewer = figure('name', 'Viewer');
 else
     figure(this.Viewer.Number);
 end
@@ -77,13 +64,6 @@ this.ui.action = uicontrol('style', 'text', ...
     'backgroundColor', this.Window.color, 'ForegroundColor', 'y', ...
     'position', [0 0 1 1]);
 
-% --- Info
-
-this.ui.info = uicontrol('style', 'text', ...
-    'FontName', 'Courier New', 'FontSize', 11, 'HorizontalAlignment', 'left', ...
-    'backgroundColor', this.Window.color, 'ForegroundColor', 'w', ...
-    'position', [0 0 1 1]);
-
 % --- Controls ------------------------------------------------------------
 
 % --- Intensity factor
@@ -101,62 +81,23 @@ this.ui.Intfactor = uicontrol('style', 'edit', ...
 % --- Time
 
 this.ui.time = uicontrol('style','slider', 'position', [0 0 1 1], ...
-    'min', 1, 'max', this.Images.number, 'value', 1, 'SliderStep', [1 1]./(this.Images.number-1), ...
-    'visible', false);
-
-% --- Context menu
-
-this.Visu.cMenu = uicontextmenu(this.Viewer);
-
-% Create child menu items for the uicontextmenu
-uimenu(this.Visu.cMenu, 'Label', 'soma', 'Callback', @contextMenu);
-uimenu(this.Visu.cMenu, 'Label', 'centrosome', 'Callback', @contextMenu);
-uimenu(this.Visu.cMenu, 'Label', 'cone', 'Callback', @contextMenu);
+    'min', 1, 'max', this.Images.number, 'value', 1, 'SliderStep', [1 1]./(this.Images.number-1));
 
 % --- Listeners
 
 this.Viewer.ResizeFcn = @this.updateWindowSize;
 this.Viewer.Position = this.Window.position;
 this.Viewer.KeyPressFcn = @keyInput;
-this.Viewer.WindowButtonDownFcn = @mouseClick;
-this.Viewer.WindowButtonMotionFcn = @mouseMove;
 addlistener(this.ui.time, 'Value', 'PostSet', @this.updateDisplay);
 
-this.initShapes();
-this.updateInfos();
 this.updateDisplay();
 
     % === GUI nested functions ============================================
-    
-    function mouseMove(varargin)
-       
-        tmp = get(this.ui.image, 'CurrentPoint');
-        this.mousePosition.image = [tmp(1,1) tmp(1,2)];
-        
-    end
-
-    function mouseClick(varargin)
-        
-        switch this.Viewer.SelectionType
-            
-            case 'normal'
-                
-                this.input('leftClick');
-                
-            case 'extend'
-                this.input('middleClick');
-                
-            case 'alt'
-                this.input('rightClick');
-                
-        end
-        
-    end
 
     function keyInput(varargin)
        
         event = varargin{2};
-    
+        
         if ismember(event.Key, {'leftarrow', 'rightarrow', 'uparrow', ...
                 'downarrow', 'pageup', 'pagedown', 'delete'})
             this.input(event.Key);

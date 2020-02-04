@@ -42,8 +42,19 @@ switch key
         this.Sh(nid).t = this.Sh(sid).t;
         this.Sh(nid).idx = this.Sh(sid).idx(I2);
         
+        this.Sh(nid).sid = numel(this.Shapes)+1;
+        nid = this.Sh(nid).sid;
+        this.Shapes(nid).t = this.Sh(sid).t;
+        this.Shapes(nid).idx = this.Sh(sid).idx(I2);
+        
         % Update shape
         this.Sh(sid).idx = this.Sh(sid).idx(I1);
+        
+        numel(this.Shapes)
+        this.Sh(sid)
+        this.Sh(sid).idx(I1)
+        
+        this.Shapes(this.Sh(sid).sid).idx = this.Sh(sid).idx(I1);
         
         % --- Display
         
@@ -57,9 +68,7 @@ switch key
 
         % --- Check former cell is complete
         if ~isnan(this.cid)
-        
-            % -- !! ---
-            
+            this.input('rightClick');
         end
         
         this.cid = numel(this.Cell)+1;
@@ -68,10 +77,11 @@ switch key
         this.updateInfos;
         
     case 's'
-        % Save shapes
-% % %         this.saveFragments();
-% % %         
-% % %         this.ui.action.String = "Fragments saved @ " + datestr(now, 'hh:MM:ss');
+        % Save Shapes and Cells
+        
+        this.saveShapes();
+        this.saveCells();
+        this.ui.action.String = "Shapes & Cells saved @ " + datestr(now, 'hh:MM:ss');
         
         
     case 'leftarrow'
@@ -140,22 +150,44 @@ switch key
                     end
                     
             end
+            
+            this.Cell(this.cid).idx = union(this.Cell(this.cid).idx, ...
+                        this.Sh(mi).idx);
+                    
+            this.Sh(mi) = [];
        
             this.updateInfos;
+            this.updateDisplay;
             
         end
     
     case 'middleClick'
-        % Select fragment (among visible)
+        % Skip selection (cell)
         
-        tmp = this.getFragment();
-        if isnan(tmp), return; end
-        this.fid = tmp;
+        if ~isnan(this.cid)
+            switch this.step
+                case 'soma', this.step = 'centrosome';
+                case 'centrosome', this.step = 'cones';
+                otherwise, this.step = 'other';
+            end
+            this.updateInfos;
+        end
         
-        this.updateInfos;
-        this.ui.action.String = "Fragment " + this.fid + " selected";
-        this.prepareDisplay;
-        this.updateDisplay;
+    case 'rightClick'
+        % End cell selection
+        
+        if ~isnan(this.cid)
+                   
+            if isempty(this.Cell(this.cid).idx)
+                this.Cell(this.cid) = [];
+            end
+            
+            % --- Updates
+            this.cid = NaN;
+            this.updateInfos;
+            this.updateDisplay;
+            
+        end
         
     otherwise
         
