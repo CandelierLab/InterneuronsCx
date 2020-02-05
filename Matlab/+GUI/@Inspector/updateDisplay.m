@@ -16,7 +16,7 @@ Img = If*double(imread(this.File.images, ti))/255;
 imshow(Img);
 
 axis xy tight
-% axtoolbar(this.ui.image, {'zoomin', 'pan'});
+axtoolbar(this.ui.image, {'zoomin', 'pan'});
 
 this.ui.title.String = ['Frame ' num2str(ti, this.Visu.frameFormat) ' / ' num2str(this.Images.number)];
 

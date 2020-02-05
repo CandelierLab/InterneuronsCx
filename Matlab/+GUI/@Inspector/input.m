@@ -102,6 +102,48 @@ switch key
         
         this.updateInfos;
         this.updateDisplay;
+
+    case 'm'
+        % Merge shapes
+        
+        % --- Blobs of interest
+        
+        p = GUI.ginputWhite(2);
+        D1 = NaN(numel(this.Blob),1);
+        D2 = NaN(numel(this.Blob),1);
+        for k = 1:numel(this.Blob)
+            D1(k) = (this.Blob(k).pos.x-p(1,1)).^2 + (this.Blob(k).pos.y-p(1,2)).^2;
+            D2(k) = (this.Blob(k).pos.x-p(2,1)).^2 + (this.Blob(k).pos.y-p(2,2)).^2;
+        end
+        
+        % Blob identifiers
+        [~, bid1] = min(D1);
+        [~, bid2] = min(D2);
+        
+        % Shapes identifiers
+        sid1 = this.Blob(bid1).sid;
+        sid2 = this.Blob(bid2).sid;
+        
+        % --- Merge shapes
+        
+        this.Shape(sid1).idx = union(this.Shape(sid1).idx, this.Shape(sid2).idx);
+        this.Shape(sid2) = [];
+        
+        % --- Merge blobs 
+        
+        this.Blob(bid1).idx = union(this.Blob(bid1).idx, this.Blob(bid2).idx);
+        this.compute('Blob', ["pos", "contour"], bid1);
+        this.Blob(bid2) = [];
+        
+        % Update subsequent indexes
+        for i = bid2:numel(this.Blob)
+            this.Blob(i).sid = this.Blob(i).sid-1;
+        end
+        
+        % --- Display
+        
+        this.updateInfos;
+        this.updateDisplay();
         
     case 'n'
         % New cell
@@ -151,8 +193,12 @@ switch key
     
     case 'pageup'
         % First free shape
-% % %         this.ui.time.Value = min(cellfun(@min, {this.Fr(string({this.Fr.status})=="unused").t}));
-% % %         this.updateDisplay();
+        
+        this.ui.time.Value = min([this.Shape.t]);
+        
+        this.loadTime;
+        this.updateInfos;
+        this.updateDisplay();
         
     case 'leftClick'
         % Cell definition
