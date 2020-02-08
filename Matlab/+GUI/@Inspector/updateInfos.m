@@ -36,12 +36,7 @@ if ~isnan(this.uid)
     
     % --- Soma
     
-    if strcmp(this.step, 'soma')
-        s = "* SOMA";
-    else
-        s = "* Soma";
-    end
-    
+    s = "* Soma";    
     if isempty(this.Unit(this.uid).soma)
         S(end+1) = s + " - undefined";
         nSo = 0;
@@ -52,12 +47,7 @@ if ~isnan(this.uid)
 
     % --- Centrosome
     
-    if strcmp(this.step, 'centrosome')
-        s = "* CENTROSOME";
-    else
-        s = "* Centrosome";
-    end
-    
+    s = "* Centrosome";
     if isempty(this.Unit(this.uid).centrosome)
         S(end+1) = s + " - undefined";
         nCe = 0;
@@ -68,12 +58,7 @@ if ~isnan(this.uid)
 
     % --- Cones
     
-    if strcmp(this.step, 'cones')
-        s = "* CONES";
-    else
-        s = "* Cones";
-    end
-    
+    s = "* Cones";
     nCo = 0;
     if isempty(this.Unit(this.uid).cones)
         S(end+1) = s + " - undefined";

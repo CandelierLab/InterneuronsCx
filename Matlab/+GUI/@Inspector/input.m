@@ -64,8 +64,8 @@ switch key
         this.updateInfos;
         this.updateDisplay;
 
-    case 'k'
-        % Cell to shape (unit to blob)
+    case 'f'
+        % Cell to shapes (unit to blobs)
         
         % --- Get unit id
         
@@ -74,20 +74,28 @@ switch key
         pos = [all.pos];
         [~, uid] = min(([pos.x]-p(1)).^2 + ([pos.y]-p(2)).^2);
         
-        % --- Convert Unit to shape
+        % --- Define regions
         
-        sid = numel(this.Shape)+1;
-        this.Shape(sid).t = this.ui.time.Value;
-        this.Shape(sid).idx = this.Unit(uid).all.idx;
+        Mask = zeros(this.Images.Height, this.Images.Width);
+        Mask(this.Unit(uid).all.idx) = 1;
+        R = bwconncomp(Mask);
+        for i = 1:numel(R.PixelIdxList)
         
-        % --- Convert Unit to blob
+            % --- Convert Unit to shapes
+            
+            sid = numel(this.Shape)+1;
+            this.Shape(sid).t = this.ui.time.Value;
+            this.Shape(sid).idx = R.PixelIdxList{i};
+            
+            % --- Convert Unit to blobs
+            
+            bid = numel(this.Blob)+1;
+            this.Blob(bid).sid = sid;
+            this.Blob(bid).idx = R.PixelIdxList{i};
+            this.compute('Blob', ["pos", "contour"], bid);
         
-        bid = numel(this.Blob)+1;
-        this.Blob(bid).sid = sid;
-        this.Blob(bid).idx = this.Unit(uid).all.idx;
-        this.Blob(bid).pos = this.Unit(uid).all.pos;
-        this.Blob(bid).contour = this.Unit(uid).all.contour;
-                
+        end
+            
         % --- Delete cell & unit
         
         this.Cell(this.Unit(uid).cid) = [];
@@ -146,18 +154,25 @@ switch key
         this.updateDisplay();
         
     case 'n'
-        % New cell
+        % Add soma to current cell
 
-        % --- Check former cell is complete
-        if ~isnan(this.uid)
-            this.input('rightClick');
-        end
+        append('soma');
         
-        this.uid = numel(this.Unit)+1;
-        this.Unit(this.uid).t = this.ui.time.Value;
-        this.Unit(this.uid).all = struct('idx', [], 'pos', [], 'contour', []);
-        this.step = 'soma';
-        this.updateInfos;
+    case 'j'
+        % Add centrosome to current cell
+
+        append('centrosome');
+        
+    case 'k'
+        % Add cone to current cell
+
+        append('cone')
+
+    case ','
+        % Add undefined region to current cell
+
+        append('undefined');
+
         
     case 's'
         % Save Shapes and Cells
@@ -166,9 +181,62 @@ switch key
         this.saveCells();
         this.ui.action.String = "Shapes & Cells saved @ " + datestr(now, 'hh:MM:ss');
         
+    case 'z'
+        % Zoom
+        
+        if isstruct(this.zoom)
+            this.zoom = NaN;
+            axis(this.ui.image, 'tight');
+        else
+            this.zoom = struct('pos', this.mousePosition.image, 'size', 30);
+            axis([this.zoom.pos(1)-this.zoom.size ...
+                this.zoom.pos(1)+this.zoom.size ...
+                this.zoom.pos(2)-this.zoom.size ...
+                this.zoom.pos(2)+this.zoom.size]);
+        end
+        
+        this.updateDisplay;
+        
+    case 'A'
+        % Set all remaining shapes to somas
+              
+        sid = NaN(numel(this.Blob),1);        
+        for i = 1:numel(this.Blob)
+            
+            % Create a Unit
+            uid = numel(this.Unit)+1;
+            this.Unit(uid).t = this.ui.time.Value;
+            this.Unit(uid).all = struct('idx', this.Blob(i).idx, ...
+                'pos', this.Blob(i).pos, ...
+                'contour', this.Blob(i).contour);
+            this.Unit(uid).soma = this.Unit(uid).all;
+            
+            % Create a Cell
+            ncid = numel(this.Cell)+1;
+            this.Cell(ncid).t = this.ui.time.Value;
+            this.Cell(ncid).all = this.Unit(uid).all;
+            this.Cell(ncid).soma = this.Unit(uid).soma;
+            this.Cell(ncid).centrosome = this.Unit(uid).centrosome;
+            this.Cell(ncid).cones = this.Unit(uid).cones;
+        
+            sid(i) = this.Blob(i).sid;
+            
+        end
+        
+        % Delete Shapes
+        this.Shape(sid) = [];
+        
+        this.loadTime;
+        this.updateInfos;
+        this.updateDisplay();
         
     case 'leftarrow'
         % Time -1
+        
+        if ~isnan(this.uid)
+            this.input('return');
+        end
+        
         this.ui.time.Value = max(this.ui.time.Value-1, this.ui.time.Min);
         
         this.loadTime;
@@ -177,6 +245,11 @@ switch key
         
     case 'rightarrow'
         % Time +1
+        
+        if ~isnan(this.uid)
+            this.input('return');
+        end
+        
         this.ui.time.Value = min(this.ui.time.Value+1, this.ui.time.Max);
         
         this.loadTime;
@@ -200,91 +273,7 @@ switch key
         this.updateInfos;
         this.updateDisplay();
         
-    case 'leftClick'
-        % Cell definition
-        
-        if ~isnan(this.uid)
-        
-            % Get closest
-            p = this.mousePosition.image;
-            pos = [this.Blob.pos];
-            [~, bid] = min((p(1)-[pos.x]).^2 + (p(2)-[pos.y]).^2);
-            
-            switch this.step
-                
-                case 'soma'
-                     
-                    this.Unit(this.uid).soma = struct(...
-                        'idx', this.Blob(bid).idx, ...
-                        'pos', this.Blob(bid).pos, ...
-                        'contour',  this.Blob(bid).contour);
-                    
-                    this.step = 'centrosome';
-                    
-                case 'centrosome'
-
-                    this.Unit(this.uid).centrosome = struct(...
-                        'idx', this.Blob(bid).idx, ...
-                        'pos', this.Blob(bid).pos, ...
-                        'contour',  this.Blob(bid).contour);
-                    
-                    this.step = 'cones';
-                    
-                case 'cones'
-                    
-                    if isempty(this.Unit(this.uid).cones)
-                        this.Unit(this.uid).cones = struct(...
-                            'idx', this.Blob(bid).idx, ...
-                            'pos', this.Blob(bid).pos, ...
-                            'contour',  this.Blob(bid).contour);
-                    else
-                        id = numel(this.Unit(this.uid).cones)+1;
-                        this.Unit(this.uid).cones(id).idx = this.Blob(bid).idx;
-                        this.Unit(this.uid).cones(id).pos = this.Blob(bid).pos;
-                        this.Unit(this.uid).cones(id).contour = this.Blob(bid).contour;
-                    end
-                    
-            end
-            
-            % --- Update 'all' in units
-            
-            this.Unit(this.uid).all.idx = union(this.Unit(this.uid).all.idx, ...
-                this.Blob(bid).idx);
-            this.compute('Unit', ["pos", "contour"], this.uid);
-            
-            % --- Remove blob
-            
-            % Remove shape
-            this.Shape(this.Blob(bid).sid) = [];
-            
-            % Remove blob
-            this.Blob(bid) = [];
-       
-            % Update subsequent blob indexing
-            for i = bid:numel(this.Blob)
-                this.Blob(i).sid = this.Blob(i).sid-1;
-            end
-            
-            % --- Display
-            
-            this.updateInfos;
-            this.updateDisplay;
-            
-        end
-    
-    case 'middleClick'
-        % Skip selection (cell definition)
-        
-        if ~isnan(this.uid)
-            switch this.step
-                case 'soma', this.step = 'centrosome';
-                case 'centrosome', this.step = 'cones';
-                otherwise, this.step = 'other';
-            end
-            this.updateInfos;
-        end
-        
-    case 'rightClick'
+    case {'return', 'rightClick'}
         % End cell selection
         
         if ~isnan(this.uid)
@@ -342,4 +331,69 @@ switch key
         
         this.ui.action.String = "[Input] " + key;
         
+end
+
+    function append(w)
+        
+        % Cell definition (if needed)
+        if isnan(this.uid)
+            this.uid = numel(this.Unit)+1;
+            this.Unit(this.uid).t = this.ui.time.Value;
+            this.Unit(this.uid).all = struct('idx', [], 'pos', [], 'contour', []);
+        end
+        
+        % Get closest
+        p = this.mousePosition.image;
+        pos = [this.Blob.pos];
+        [~, bid] = min((p(1)-[pos.x]).^2 + (p(2)-[pos.y]).^2);
+        
+        % Define element
+        
+        switch w
+        
+            case {'soma', 'centrosome'}
+                this.Unit(this.uid).(w) = struct(...
+                    'idx', this.Blob(bid).idx, ...
+                    'pos', this.Blob(bid).pos, ...
+                    'contour',  this.Blob(bid).contour);
+                
+            case 'cone'
+                if isempty(this.Unit(this.uid).cones)
+                    this.Unit(this.uid).cones = struct(...
+                        'idx', this.Blob(bid).idx, ...
+                        'pos', this.Blob(bid).pos, ...
+                        'contour',  this.Blob(bid).contour);
+                else
+                    id = numel(this.Unit(this.uid).cones)+1;
+                    this.Unit(this.uid).cones(id).idx = this.Blob(bid).idx;
+                    this.Unit(this.uid).cones(id).pos = this.Blob(bid).pos;
+                    this.Unit(this.uid).cones(id).contour = this.Blob(bid).contour;
+                end
+        end
+        
+        % Update 'all' in unit        
+        this.Unit(this.uid).all.idx = union(this.Unit(this.uid).all.idx, ...
+            this.Blob(bid).idx);
+        this.compute('Unit', ["pos", "contour"], this.uid);
+        
+        % --- Remove shape
+        
+        % Remove shape
+        this.Shape(this.Blob(bid).sid) = [];
+        
+        % Remove blob
+        this.Blob(bid) = [];
+        
+        % Update subsequent blob indexing
+        for ii = bid:numel(this.Blob)
+            this.Blob(ii).sid = this.Blob(ii).sid-1;
+        end
+        
+        % --- Display
+        
+        this.updateInfos;
+        this.updateDisplay; 
+        
+    end
+
 end

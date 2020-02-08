@@ -149,7 +149,7 @@ this.updateDisplay();
         event = varargin{2};
     
         if ismember(event.Key, {'leftarrow', 'rightarrow', 'uparrow', ...
-                'downarrow', 'pageup', 'pagedown', 'delete'})
+                'downarrow', 'pageup', 'pagedown', 'return', 'delete'})
             this.input(event.Key);
         else
             this.input(event.Character);

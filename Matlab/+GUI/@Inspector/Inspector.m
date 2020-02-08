@@ -16,6 +16,7 @@ classdef Inspector < handle
         ui = struct()
         keyboardInput = struct('active', false, 'command', '', 'buffer', '')
         mousePosition = struct('image', NaN(2,1))
+        zoom = NaN;
                 
         % Shapes
         Shape
@@ -25,7 +26,6 @@ classdef Inspector < handle
         Cell
         Unit
         uid = NaN;
-        step = '';
         
     end
     
