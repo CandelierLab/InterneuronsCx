@@ -9,14 +9,12 @@ DS = dataSource;
 this.File.images = [DS.data this.study filesep this.run filesep this.run '.tiff'];
 this.File.shapes = [DS.data this.study filesep this.run filesep 'Files' filesep 'Shapes.mat'];
 this.File.cells = [DS.data this.study filesep this.run filesep 'Files' filesep 'Cells.mat'];
+this.File.data = [DS.data this.study filesep this.run filesep 'Files' filesep 'Display.tiff'];
 
 % Get image info
 tmp = imfinfo(this.File.images);
 this.Images = tmp(1);
 this.Images.number = numel(tmp);
-
-% Load shapes & cells
-this.load;
 
 % === Figure ==============================================================
 
@@ -24,7 +22,6 @@ this.load;
 
 this.Window.menuWidth = 400;
 this.Visu.frameFormat = ['%0' num2str(ceil(log10(this.Images.number))) 'i'];
-this.Visu.fps = 50;
 
 % Views
 this.Visu.viewPlay = false;
@@ -93,7 +90,7 @@ this.ui.Intfactor = uicontrol('style', 'edit', ...
 
 this.ui.time = uicontrol('style','slider', 'position', [0 0 1 1], ...
     'min', 1, 'max', this.Images.number, 'value', 1, 'SliderStep', [1 1]./(this.Images.number-1), ...
-    'visible', false);
+    'Callback', @this.reloadDisplay);
 
 % --- Context menu
 
@@ -113,12 +110,37 @@ this.Viewer.WindowButtonDownFcn = @mouseClick;
 this.Viewer.WindowButtonMotionFcn = @mouseMove;
 addlistener(this.ui.time, 'Value', 'PostSet', @this.updateDisplay);
 
+% === Data ================================================================
+
+% Load shapes & cells
+this.load;
+
+% Raw image file
+this.Raw = Tiff(this.File.images, 'r');
+
+% Get data fid
+this.Visu.tagstruct = struct('ImageLength', this.Images.Height, ...
+    'ImageWidth', this.Images.Width, ...
+    'Photometric', Tiff.Photometric.RGB, ...
+	'BitsPerSample', 8, ...
+	'SamplesPerPixel', 3, ...
+	'PlanarConfiguration', Tiff.PlanarConfiguration.Chunky, ...
+    'Software', 'GUI.Inspector');
+
+if ~exist(this.File.data, 'file')
+    this.prepareAllDisplay;
+else
+    this.Data = Tiff(this.File.data, 'r+');
+end
+
+this.Data = Tiff(this.File.data, 'r+');
+
 this.loadTime();
-this.updateInfos();
 this.updateDisplay();
+this.updateInfos();
 
     % === GUI nested functions ============================================
-    
+       
     function mouseMove(varargin)
        
         tmp = get(this.ui.image, 'CurrentPoint');

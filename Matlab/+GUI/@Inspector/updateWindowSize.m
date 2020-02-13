@@ -19,7 +19,7 @@ this.ui.image.Position = [this.Window.menuWidth+20 50 W-2*this.Window.menuWidth-
 
 % --- Time
 
-% this.ui.time.Position = [this.Window.menuWidth+20 10 W-2*this.Window.menuWidth-40 20];
+this.ui.time.Position = [this.Window.menuWidth+20 10 W-2*this.Window.menuWidth-40 20];
 this.ui.title.Position = [this.Window.menuWidth+20 h-50 W-2*this.Window.menuWidth-40 20];
 
 % --- Menu

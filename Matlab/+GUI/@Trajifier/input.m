@@ -1,7 +1,6 @@
 function input(this, key, value)
 %INPUT User input
 
-
 switch key
     
     case 'b'
@@ -32,17 +31,10 @@ switch key
         this.Fr(k).status = 'unused';
         this.Fr(k).t = this.Fr(fid).t(I);
         
-        this.Fr(k).soma.idx = this.Fr(fid).soma.idx(I);
-        this.Fr(k).soma.pos = this.Fr(fid).soma.pos(I,:);
-        this.Fr(k).soma.fluo = this.Fr(fid).soma.fluo(I);
-        
-        this.Fr(k).centrosome.idx = this.Fr(fid).centrosome.idx(I);
-        this.Fr(k).centrosome.pos = this.Fr(fid).centrosome.pos(I,:);
-        this.Fr(k).centrosome.fluo = this.Fr(fid).centrosome.fluo(I);
-        
-        this.Fr(k).cone.idx = this.Fr(fid).cone.idx(I);
-        this.Fr(k).cone.pos = this.Fr(fid).cone.pos(I,:);
-        this.Fr(k).cone.fluo = this.Fr(fid).cone.fluo(I);
+        this.Fr(k).all = this.Fr(fid).all(I);
+        this.Fr(k).soma = this.Fr(fid).soma(I);
+        this.Fr(k).centrosome = this.Fr(fid).centrosome(I);
+        this.Fr(k).cones = this.Fr(fid).cones(I);
         
         % --- Trim fragment
         
@@ -50,24 +42,15 @@ switch key
         I = this.Fr(fid).t<ti;
         
         this.Fr(fid).t = this.Fr(fid).t(I);
-        
-        this.Fr(fid).soma.idx = this.Fr(fid).soma.idx(I);
-        this.Fr(fid).soma.pos = this.Fr(fid).soma.pos(I,:);
-        this.Fr(fid).soma.fluo = this.Fr(fid).soma.fluo(I);
-        
-        this.Fr(fid).centrosome.idx = this.Fr(fid).centrosome.idx(I);
-        this.Fr(fid).centrosome.pos = this.Fr(fid).centrosome.pos(I,:);
-        this.Fr(fid).centrosome.fluo = this.Fr(fid).centrosome.fluo(I);
-        
-        this.Fr(fid).cone.idx = this.Fr(fid).cone.idx(I);
-        this.Fr(fid).cone.pos = this.Fr(fid).cone.pos(I,:);
-        this.Fr(fid).cone.fluo = this.Fr(fid).cone.fluo(I);
+        this.Fr(fid).all = this.Fr(fid).all(I);
+        this.Fr(fid).soma = this.Fr(fid).soma(I);
+        this.Fr(fid).centrosome = this.Fr(fid).centrosome(I);
+        this.Fr(fid).cones = this.Fr(fid).cones(I);
         
         % --- Save and display
         
         this.prepareDisplay;
         this.updateDisplay;
-%         this.saveFragments;
         
     case 'd'
         % Flashback duration
@@ -83,33 +66,6 @@ switch key
         
         this.Visu.viewPlay = true;
         this.updateDisplay();
-        
-    case 'g'
-        % Global view
-        this.Visu.viewLocal = false;
-        this.ui.menu.shortcuts.String = this.getControls();
-        this.updateDisplay();
-        
-    case 'l'
-        % Local view
-        this.Visu.viewLocal = true;
-        this.ui.menu.shortcuts.String = this.getControls();
-        this.updateDisplay();
-        
-    case 'n'
-        % Next doublon
-        if isempty(this.doublons)
-            this.ui.action.String = 'No doublon found';
-        else
-            if this.ui.time.Value>=this.doublons(end)
-                nt = this.doublons(1);
-            else
-                nt = this.doublons(find(this.doublons>this.ui.time.Value, 1, 'first'));
-            end
-            this.ui.time.Value = nt;
-            this.Visu.viewPlay = false;
-            this.doublonDisplay();
-        end
         
     case 'q'
         % Toggle quarantine
@@ -134,13 +90,12 @@ switch key
         this.updateDisplay;
         this.updateInfos;
         
-%         this.saveFragments;
-       
     case 'r'
         % Search trajectory
         
         fid = find(cellfun(@(x) x(1)==value, {this.Fr.status}),1,'first');
         if ~isempty(fid)
+            
             this.tid = this.Fr(fid).status;
             this.ui.time.Value = this.Fr(fid).t(1);
             
@@ -152,7 +107,6 @@ switch key
     case 's'
         % Save fragments
         this.saveFragments();
-        
         this.ui.action.String = "Fragments saved @ " + datestr(now, 'hh:MM:ss');
         
     case 't'
@@ -162,15 +116,26 @@ switch key
         this.prepareDisplay();
         this.updateDisplay();
         
-    case 'v'
-        % Framerate
-        this.Visu.fps = max(min(round(value), 50), 1);
-        this.ui.menu.shortcuts.String = this.getControls();
+% % %     case 'w'
+% % %         % Width of the local view
+% % %         this.Visu.lsz = max(min(round(value), this.Images.Width), 10);
+% % %         this.ui.menu.shortcuts.String = this.getControls();
         
-    case 'w'
-        % Width of the local view
-        this.Visu.lsz = max(min(round(value), this.Images.Width), 10);
-        this.ui.menu.shortcuts.String = this.getControls();
+    case 'z'
+        % Zoom
+        
+        if isstruct(this.zoom)
+            this.zoom = NaN;
+            axis(this.ui.image, 'tight');
+        else
+            this.zoom = struct('pos', this.mousePosition.image, 'size', 30);
+            axis([this.zoom.pos(1)-this.zoom.size ...
+                this.zoom.pos(1)+this.zoom.size ...
+                this.zoom.pos(2)-this.zoom.size ...
+                this.zoom.pos(2)+this.zoom.size]);
+        end
+        
+        this.updateDisplay;    
         
     case ' '
         this.Visu.viewPlay = ~this.Visu.viewPlay;
@@ -191,7 +156,6 @@ switch key
         this.Fr(fid).status = this.tid;
 
         this.updateInfos;
-        this.updateWarnings;
         this.prepareDisplay;
         this.updateDisplay;
         % this.saveFragments;
@@ -208,7 +172,6 @@ switch key
         this.Fr(fid).status = 'unused';
 
         this.updateInfos;
-        this.updateWarnings;
         this.prepareDisplay;
         this.updateDisplay;
         % this.saveFragments;
@@ -221,7 +184,6 @@ switch key
         
     case 'S'
         % Export trajectories
-        
         this.exportTrajectories;
         this.ui.action.String = "Trajectories saved @ " + datestr(now, 'hh:MM:ss');
         
@@ -252,17 +214,21 @@ switch key
         
         if ~isnan(this.tid)
             Traj = find(string({this.Fr.status})==string(this.tid)); 
-            this.ui.time.Value = max(cat(1,this.Fr(Traj).t));
-            this.updateDisplay();
+            if ~isempty(Traj)
+                this.ui.time.Value = max(cat(1,this.Fr(Traj).t));
+                this.updateDisplay();
+            end
         end
         
     case 'downarrow'
         % Beginning of current trajectory
         
         if ~isnan(this.tid)
-            Traj = find(string({this.Fr.status})==string(this.tid)); 
-            this.ui.time.Value = min(cat(1,this.Fr(Traj).t));
-            this.updateDisplay();
+            Traj = find(string({this.Fr.status})==string(this.tid));
+            if ~isempty(Traj)
+                this.ui.time.Value = min(cat(1,this.Fr(Traj).t));
+                this.updateDisplay();
+            end
         end
         
     case 'pagedown'
@@ -272,7 +238,9 @@ switch key
     
     case 'pageup'
         % First unused fragment
+        this.ui.time.Value
         this.ui.time.Value = min(cellfun(@min, {this.Fr(string({this.Fr.status})=="unused").t}));
+        this.ui.time.Value
         this.updateDisplay();
         
     case 'middleClick'
@@ -298,62 +266,9 @@ switch key
         this.tid = this.Fr(tmp).status;
         
         this.updateInfos;
-        this.updateWarnings;
         this.ui.action.String = "Trajectory " + this.tid + " selected";
         this.prepareDisplay();
         this.updateDisplay();
-        
-    case 'centrosome'
-        % Define point as centrosome
-    
-        % Find closest fragment and trajectory
-        ti = round(get(this.ui.time, 'Value'));
-        fid = this.getFragment();
-        if isnan(fid), return; end
-        
-        i = find(this.Fr(fid).t==ti);
-        this.Fr(fid).centrosome.idx{i} = this.Fr(fid).soma.idx{i};
-        this.Fr(fid).centrosome.pos(i,:) = this.Fr(fid).soma.pos(i,:);
-        this.Fr(fid).centrosome.fluo(i) = this.Fr(fid).soma.fluo(i);
-        
-        this.Fr(fid).soma.idx{i} = [];
-        this.Fr(fid).soma.pos(i,:) = [NaN NaN];
-        this.Fr(fid).soma.fluo(i) = NaN;
-
-        this.updateWarnings;
-        this.updateInfos;
-        if isempty(this.doublons)
-            this.prepareDisplay;
-            this.updateDisplay;
-        else
-            this.input('n');
-        end
-
-    case 'cone'
-        % Define point as cone
-    
-        % Find closest fragment and trajectory
-        ti = round(get(this.ui.time, 'Value'));
-        fid = this.getFragment();
-        if isnan(fid), return; end
-        
-        i = find(this.Fr(fid).t==ti);
-        this.Fr(fid).cone.idx{i} = this.Fr(fid).soma.idx{i};
-        this.Fr(fid).cone.pos(i,:) = this.Fr(fid).soma.pos(i,:);
-        this.Fr(fid).cone.fluo(i) = this.Fr(fid).soma.fluo(i);
-        
-        this.Fr(fid).soma.idx{i} = [];
-        this.Fr(fid).soma.pos(i,:) = [NaN NaN];
-        this.Fr(fid).soma.fluo(i) = NaN;
-
-        this.updateWarnings;
-        this.updateInfos;
-        if isempty(this.doublons)
-            this.prepareDisplay;
-            this.updateDisplay;
-        else
-            this.input('n');
-        end
         
     otherwise
         

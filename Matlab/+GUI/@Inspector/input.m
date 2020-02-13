@@ -3,6 +3,39 @@ function input(this, key, value)
 
 switch key
        
+    case 'a'
+        % Set all shapes on frame to somas
+              
+        sid = NaN(numel(this.Blob),1);        
+        for i = 1:numel(this.Blob)
+            
+            % Create a Unit
+            uid = numel(this.Unit)+1;
+            this.Unit(uid).t = this.ui.time.Value;
+            this.Unit(uid).all = struct('idx', this.Blob(i).idx, ...
+                'pos', this.Blob(i).pos, ...
+                'contour', this.Blob(i).contour);
+            this.Unit(uid).soma = this.Unit(uid).all;
+            
+            % Create a Cell
+            ncid = numel(this.Cell)+1;
+            this.Cell(ncid).t = this.ui.time.Value;
+            this.Cell(ncid).all = this.Unit(uid).all;
+            this.Cell(ncid).soma = this.Unit(uid).soma;
+            this.Cell(ncid).centrosome = this.Unit(uid).centrosome;
+            this.Cell(ncid).cones = this.Unit(uid).cones;
+        
+            sid(i) = this.Blob(i).sid;
+            
+        end
+        
+        % Delete Shapes
+        this.Shape(sid) = [];
+        
+        this.prepareDisplay(this.ui.time.Value);
+        this.updateInfos;
+        this.updateDisplay();
+    
     case 'c'
         
         % --- Create line
@@ -60,10 +93,12 @@ switch key
         
         % --- Update display
         
-        this.compute('Blob', ["pos", "contour"], [bid nbid]);        
+        this.compute('Blob', ["pos", "contour"], [bid nbid]);
+        
+        this.prepareDisplay(this.ui.time.Value);
         this.updateInfos;
         this.updateDisplay;
-
+        
     case 'f'
         % Cell to shapes (unit to blobs)
         
@@ -108,9 +143,20 @@ switch key
         
         % --- Display
         
+        this.prepareDisplay(this.ui.time.Value);
         this.updateInfos;
         this.updateDisplay;
-
+        
+    case 'j'
+        % Add centrosome to current cell
+        
+        append('centrosome');
+        
+    case 'k'
+        % Add cone to current cell
+        
+        append('cone')
+        
     case 'm'
         % Merge shapes
         
@@ -150,6 +196,7 @@ switch key
         
         % --- Display
         
+        this.prepareDisplay(this.ui.time.Value);
         this.updateInfos;
         this.updateDisplay();
         
@@ -157,29 +204,21 @@ switch key
         % Add soma to current cell
 
         append('soma');
-        
-    case 'j'
-        % Add centrosome to current cell
-
-        append('centrosome');
-        
-    case 'k'
-        % Add cone to current cell
-
-        append('cone')
-
-    case ','
-        % Add undefined region to current cell
-
-        append('undefined');
-
-        
+    
     case 's'
         % Save Shapes and Cells
         
         this.saveShapes();
         this.saveCells();
         this.ui.action.String = "Shapes & Cells saved @ " + datestr(now, 'hh:MM:ss');
+       
+    case 'u'
+        % Update display
+        
+        this.loadTime;
+        this.prepareDisplay(this.ui.time.Value);
+        this.updateInfos;
+        this.updateDisplay();
         
     case 'z'
         % Zoom
@@ -198,37 +237,57 @@ switch key
         this.updateDisplay;
         
     case 'A'
-        % Set all remaining shapes to somas
-              
-        sid = NaN(numel(this.Blob),1);        
-        for i = 1:numel(this.Blob)
+        % Set all shapes to somas
+             
+        wb = waitbar(0, '', 'Name', 'Somatization');
+        
+        for i = 1:numel(this.Shape)
             
             % Create a Unit
             uid = numel(this.Unit)+1;
-            this.Unit(uid).t = this.ui.time.Value;
-            this.Unit(uid).all = struct('idx', this.Blob(i).idx, ...
-                'pos', this.Blob(i).pos, ...
-                'contour', this.Blob(i).contour);
+            this.Unit(uid).t = this.Shape(i).t;
+            this.Unit(uid).all = struct('idx', this.Shape(i).idx, ...
+                'pos', [], 'contour', []);
+            this.compute('Unit', ["pos", "contour"], uid);
             this.Unit(uid).soma = this.Unit(uid).all;
             
             % Create a Cell
             ncid = numel(this.Cell)+1;
-            this.Cell(ncid).t = this.ui.time.Value;
+            this.Cell(ncid).t = this.Unit(uid).t;
             this.Cell(ncid).all = this.Unit(uid).all;
             this.Cell(ncid).soma = this.Unit(uid).soma;
             this.Cell(ncid).centrosome = this.Unit(uid).centrosome;
             this.Cell(ncid).cones = this.Unit(uid).cones;
-        
-            sid(i) = this.Blob(i).sid;
             
+            waitbar(i/numel(this.Shape), wb, 'Converting shapes to somas');
         end
         
-        % Delete Shapes
-        this.Shape(sid) = [];
+        close(wb);
         
+        % Empty shapes & blobs
+        this.Shape(:) = [];
+        this.Blob(:) = [];
+        
+        this.prepareAllDisplay();
+        this.updateInfos;
+        this.updateDisplay();
+      
+    case 'U'
+        % Update display
+        
+        t0 = this.ui.time.Value;
+        
+        this.prepareAllDisplay();
+        
+        this.ui.time.Value = t0;
         this.loadTime;
         this.updateInfos;
         this.updateDisplay();
+        
+    case ','
+        % Add undefined region to current cell
+
+        append('undefined');
         
     case 'leftarrow'
         % Time -1
@@ -240,6 +299,7 @@ switch key
         this.ui.time.Value = max(this.ui.time.Value-1, this.ui.time.Min);
         
         this.loadTime;
+        this.prepareDisplay(this.ui.time.Value);
         this.updateInfos;
         this.updateDisplay();
         
@@ -253,6 +313,7 @@ switch key
         this.ui.time.Value = min(this.ui.time.Value+1, this.ui.time.Max);
         
         this.loadTime;
+        this.prepareDisplay(this.ui.time.Value);
         this.updateInfos;
         this.updateDisplay();
         
@@ -261,6 +322,7 @@ switch key
         this.ui.time.Value = this.ui.time.Min;
         
         this.loadTime;
+        this.prepareDisplay(this.ui.time.Value);
         this.updateInfos;
         this.updateDisplay();
     
@@ -270,6 +332,7 @@ switch key
         this.ui.time.Value = min([this.Shape.t]);
         
         this.loadTime;
+        this.prepareDisplay(this.ui.time.Value);
         this.updateInfos;
         this.updateDisplay();
         
@@ -295,7 +358,6 @@ switch key
             
             this.uid = NaN;
             this.updateInfos;
-            this.updateDisplay;
             
         end
         
@@ -324,6 +386,7 @@ switch key
         
         % --- Display
         
+        this.prepareDisplay(this.ui.time.Value);
         this.updateInfos;
         this.updateDisplay;
         
@@ -391,6 +454,7 @@ end
         
         % --- Display
         
+        this.prepareDisplay(this.ui.time.Value);
         this.updateInfos;
         this.updateDisplay; 
         

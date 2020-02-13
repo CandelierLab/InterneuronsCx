@@ -25,16 +25,15 @@ this.tid = this.newTrajId;
 % --- Parameters
 
 this.Window.menuWidth = 400;
-this.Visu.Color.fragment = [1 1 1]*0.6; %[84 153 199]/255;
+this.Visu.Color.fragment = [1 1 1]*0.6;
 this.Visu.Color.selected = [203 67 53]/255;
 this.Visu.Color.quarantine = [0 0 0];
 this.Visu.frameFormat = ['%0' num2str(ceil(log10(this.Images.number))) 'i'];
 this.Visu.aspRatio = this.Images.number/this.Images.Width;
 this.Visu.alim3d = [1 this.Images.Height 1 this.Images.Width 1 this.Images.number];
 
-this.Visu.lsz = 150;   % Local size (in pixels) 
-this.Visu.fps = 50;
-this.Visu.fbd = 20;
+this.Visu.lsz = 150;    % Local size (in pixels) 
+this.Visu.fbd = 20;     % Flashback duration
 
 % Views
 this.Visu.crop = struct('x1', 1, 'x2', this.Images.Width, 'y1', 1, 'y2', this.Images.Height);
@@ -129,15 +128,6 @@ this.ui.Intfactor = uicontrol('style', 'edit', ...
 this.ui.time = uicontrol('style','slider', 'position', [0 0 1 1], ...
     'min', 1, 'max', this.Images.number, 'value', 1, 'SliderStep', [1 1]./(this.Images.number-1));
 
-% --- Context menu
-
-this.Visu.cMenu = uicontextmenu(this.Viewer);
-
-% Create child menu items for the uicontextmenu
-% uimenu(this.Visu.cMenu, 'Label', 'soma', 'Callback', @contextMenu);
-uimenu(this.Visu.cMenu, 'Label', 'centrosome', 'Callback', @contextMenu);
-uimenu(this.Visu.cMenu, 'Label', 'cone', 'Callback', @contextMenu);
-
 % --- Listeners
 
 this.Viewer.ResizeFcn = @this.updateWindowSize;
@@ -174,17 +164,10 @@ this.updateDisplay();
                 this.input('middleClick');
                 
             case 'alt'
-                % Right click: nothing to do (context menu)
+                this.input('rightClick');
                 
         end
         
-    end
-
-    function contextMenu(varargin)
-       
-        this.input(varargin{1}.Text);
-        % this.ui.action.String = varargin{1}.Text;
-                
     end
 
     function keyInput(varargin)

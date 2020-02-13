@@ -1,5 +1,7 @@
 function updateDisplay(this, varargin)
 
+warning('off', 'MATLAB:ui:javaframe:PropertyToBeRemoved');
+
 % --- Parameters
 
 ti = round(get(this.ui.time, 'Value'));
@@ -24,8 +26,7 @@ this.ui.title.String = ['Frame ' num2str(ti, this.Visu.frameFormat) ' / ' num2st
 if this.Visu.viewFrag    
     scatter(this.Pts.unused(ti).x, this.Pts.unused(ti).y, 30, ...
         'MarkerFaceColor', 'w', ...
-        'MarkerEdgeColor', 'k', ...
-        'UIContextMenu', this.Visu.cMenu);
+        'MarkerEdgeColor', 'k');
 end
 
 if this.Visu.viewQuar
@@ -37,46 +38,16 @@ end
 if this.Visu.viewTraj
     scatter(this.Pts.traj(ti).x, this.Pts.traj(ti).y, 30, ...
         this.Visu.Color.trajs, 'filled', ...
-        'MarkerEdgeColor', 'k', ...
-        'UIContextMenu', this.Visu.cMenu);    
+        'MarkerEdgeColor', 'k');    
 end
 
-if this.Visu.viewLocal
-    
-    % Check
-    Traj = find(cellfun(@(x) isnumeric(x) && x==this.tid, {this.Fr.status}));
-    
-    if numel(Traj)
-        
-        % --- Get position
-        
-        dt = Inf;
-        xc = NaN;
-        yc = NaN;
-        
-        for i = 1:numel(Traj)
-            [dt_, mi] = min(abs(this.Fr(Traj(i)).t-ti));
-            if dt_==0
-                xc = this.Fr(Traj(i)).soma.pos(mi,1);
-                yc = this.Fr(Traj(i)).soma.pos(mi,2);
-                break;
-            elseif dt_<dt
-                xc = this.Fr(Traj(i)).soma.pos(mi,1);
-                yc = this.Fr(Traj(i)).soma.pos(mi,2);
-                dt = dt_;
-            end
-        end
-        
-        % --- Crop image
-        
-        this.Visu.crop.x1 = round(max(xc-this.Visu.lsz/2, 1));
-        this.Visu.crop.x2 = round(min(xc+this.Visu.lsz/2, this.Images.Width));
-        this.Visu.crop.y1 = round(max(yc-this.Visu.lsz/2, 1));
-        this.Visu.crop.y2 = round(min(yc+this.Visu.lsz/2, this.Images.Height));
-        
-        axis([this.Visu.crop.x1 this.Visu.crop.x2 this.Visu.crop.y1 this.Visu.crop.y2]);
-        
-    end
+if isstruct(this.zoom)
+    axis([this.zoom.pos(1)-this.zoom.size ...
+        this.zoom.pos(1)+this.zoom.size ...
+        this.zoom.pos(2)-this.zoom.size ...
+        this.zoom.pos(2)+this.zoom.size]);
+else
+    axis tight
 end
 
 % --- Points on 3D view ---------------------------------------------------
@@ -118,6 +89,10 @@ else
     axis(this.ui.view3d, this.Visu.alim3d);
 end
 
+% Request focus
+jFig = get(this.Viewer, 'JavaFrame');
+jFig.requestFocus;
+
 % --- Draw & play ---------------------------------------------------------
 
 drawnow limitrate
@@ -129,7 +104,6 @@ if this.Visu.viewPlay
     else
         this.ui.time.Value = ti+1;
     end
-    pause(1/this.Visu.fps);
     
     this.updateDisplay(varargin{:});
 end

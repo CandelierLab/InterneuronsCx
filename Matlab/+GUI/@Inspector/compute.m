@@ -19,7 +19,7 @@ if isempty(id)
     id = 1:numel(this.(type));
 end
 
-Img = imread(this.File.images, this.ui.time.Value);
+Img = imread(this.File.images, round(this.ui.time.Value));
 
 for i = id
     

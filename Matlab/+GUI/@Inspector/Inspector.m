@@ -13,6 +13,8 @@ classdef Inspector < handle
         Viewer
         Window = struct('posittion', [], 'color', [])
         Visu = struct('intensityFactor', 1)
+        Raw
+        Data
         ui = struct()
         keyboardInput = struct('active', false, 'command', '', 'buffer', '')
         mousePosition = struct('image', NaN(2,1))

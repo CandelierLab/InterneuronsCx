@@ -1,7 +1,7 @@
-function loadTime(this)
+function loadTime(this, varargin)
 %initBlobs Initializes the blob list for a given time.
 
-ti = round(get(this.ui.time, 'Value'));
+ti = round(this.ui.time.Value);
 
 % --- Initialize blobs
 

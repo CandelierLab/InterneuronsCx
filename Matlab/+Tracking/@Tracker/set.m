@@ -6,7 +6,7 @@ function set(this, varargin)
 
 p = inputParser;
 addRequired(p, 'name', @ischar);
-addRequired(p, 'value', @(x) isnumeric(x) || iscell(x));
+addRequired(p, 'value', @(x) isnumeric(x) || iscell(x) || isstruct(x));
 parse(p, varargin{:});
 
 name = p.Results.name;

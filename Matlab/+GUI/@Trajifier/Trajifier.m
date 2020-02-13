@@ -19,12 +19,10 @@ classdef Trajifier < handle
         fid = NaN
         tid = NaN
         Pts
+        zoom = NaN;
                 
         % Fragments
         Fr
-        
-        % Trajectories
-        doublons = [];
         
     end
     

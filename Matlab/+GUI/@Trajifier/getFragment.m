@@ -1,6 +1,6 @@
 function id = getFragment(this)
 %getFragment Get the id of the closest fragment among the visible ones.
-%   The fragment can be unused, in quarantine or in a trajecotry.
+%   The fragment can be unused, in quarantine or in a trajectory.
 
 id = NaN;
 
@@ -37,8 +37,9 @@ for i = 1:numel(this.Fr)
     
     % --- Positions
     
-    x(i) = this.Fr(i).soma.pos(I,1);
-    y(i) = this.Fr(i).soma.pos(I,2);
+    pos = [this.Fr(i).soma.pos];
+    x(i) = pos(I).x;
+    y(i) = pos(I).y;
     
 end
 

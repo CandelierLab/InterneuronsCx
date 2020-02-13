@@ -40,13 +40,12 @@ for i = 1:numel(this.Fr)
         lw = 0.5;
     end
         
-    
     switch this.Fr(i).status
         
         case 'unused'
             if this.Visu.viewFrag
-                plot3(this.Fr(i).soma.pos(:,1), ...
-                    this.Fr(i).soma.pos(:,2), ...
+                pos = [this.Fr(i).soma.pos];
+                plot3([pos.x], [pos.y], ...
                     this.Fr(i).t, ...
                     '-', 'Linewidth', lw, ...
                     'color', this.Visu.Color.fragment);
@@ -54,8 +53,8 @@ for i = 1:numel(this.Fr)
             
         case 'quarantine'
             if this.Visu.viewQuar
-                plot3(this.Fr(i).soma.pos(:,1), ...
-                    this.Fr(i).soma.pos(:,2), ...
+                pos = [this.Fr(i).soma.pos];
+                plot3([pos.x], [pos.y], ...
                     this.Fr(i).t, ...
                     '-', 'Linewidth', lw, ...
                     'color', this.Visu.Color.quarantine);
@@ -63,8 +62,8 @@ for i = 1:numel(this.Fr)
             
         otherwise
             if this.Visu.viewTraj
-                plot3(this.Fr(i).soma.pos(:,1), ...
-                    this.Fr(i).soma.pos(:,2), ...
+                pos = [this.Fr(i).soma.pos];
+                plot3([pos.x], [pos.y], ...
                     this.Fr(i).t, ...
                     '-', 'Linewidth', lw, ...
                     'color', this.Visu.Color.trajs(this.Fr(i).status,:));
@@ -103,21 +102,24 @@ for i = 1:numel(this.Fr)
         
         case 'unused'
             for j = 1:numel(this.Fr(i).t)
-                this.Pts.unused(this.Fr(i).t(j)).x(end+1) = this.Fr(i).soma.pos(j,1);
-                this.Pts.unused(this.Fr(i).t(j)).y(end+1) = this.Fr(i).soma.pos(j,2);
+                pos = [this.Fr(i).soma.pos];
+                this.Pts.unused(this.Fr(i).t(j)).x(end+1) = pos(j).x;
+                this.Pts.unused(this.Fr(i).t(j)).y(end+1) = pos(j).y;
             end
                
         case 'quarantine'
             for j = 1:numel(this.Fr(i).t)
-                this.Pts.quarantine(this.Fr(i).t(j)).x(end+1) = this.Fr(i).soma.pos(j,1);
-                this.Pts.quarantine(this.Fr(i).t(j)).y(end+1) = this.Fr(i).soma.pos(j,2);
+                pos = [this.Fr(i).soma.pos];
+                this.Pts.quarantine(this.Fr(i).t(j)).x(end+1) = pos(j).x;
+                this.Pts.quarantine(this.Fr(i).t(j)).y(end+1) = pos(j).y;
             end
             
         otherwise
             for j = 1:numel(this.Fr(i).t)
-                if any(isnan(this.Fr(i).soma.pos(j,1))), continue; end
-                this.Pts.traj(this.Fr(i).t(j)).x(this.Fr(i).status) = this.Fr(i).soma.pos(j,1);
-                this.Pts.traj(this.Fr(i).t(j)).y(this.Fr(i).status) = this.Fr(i).soma.pos(j,2);
+                pos = [this.Fr(i).soma.pos];
+                if isnan(pos(j).x) || isnan(pos(j).y), continue; end
+                this.Pts.traj(this.Fr(i).t(j)).x(this.Fr(i).status) = pos(j).x;
+                this.Pts.traj(this.Fr(i).t(j)).y(this.Fr(i).status) = pos(j).y;
             end
     end
     

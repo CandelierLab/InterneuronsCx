@@ -35,6 +35,7 @@ run = '';
 fPath = '';
 fRaw = '';
 fShapes = '';
+fCells = '';
 fFragments = '';
 fTrajectories = '';
 
@@ -98,7 +99,7 @@ pstudy = uicontrol('style', 'popupmenu', ...
     'position', [10 15 150 20], ...
     'string', Studies, 'FontName', 'Courier New', 'FontSize', 10, ...
     'Callback', @updateStudy, ...
-    'Value', 2);
+    'Value', 1);
 
 prun = uicontrol('style', 'popupmenu', ...
     'position', [170 15 150 20], ...
@@ -162,6 +163,7 @@ updateStudy();
         fPath = [DS.data study filesep run filesep 'Files' filesep];
         fRaw = [DS.data study filesep run filesep run '.tiff'];
         fShapes = [fPath 'Shapes.mat'];
+        fCells = [fPath 'Cells.mat'];
         fFragments = [fPath 'Fragments.mat'];
         fTrajectories = [fPath 'Trajectories.mat'];
         
@@ -195,9 +197,15 @@ updateStudy();
         
         if exist(fShapes, 'file')
             binspect.Enable = 'on';
-            btrack.Enable = 'on';
         else
             binspect.Enable = 'off';
+        end
+        
+        % --- Check Cells.mat
+        
+        if exist(fCells, 'file')
+            btrack.Enable = 'on';
+        else
             btrack.Enable = 'off';
         end
         
@@ -330,6 +338,7 @@ updateStudy();
     % =====================================================================
     function cTracking(varargin)
 
+        clc
         closeViewer();
         
         % --- Checks
@@ -346,31 +355,29 @@ updateStudy();
         end
         
         % --- Preparation -------------------------------------------------
-                
-        tmp = load(fShapes);
-        Shapes = tmp.Shapes;
+        
+        wb = waitbar(0, 'Tracking', 'Name', 'Tracking');
+        waitbar(0, wb, 'Loading');
+        
+        tmp = load(fCells);
+        Cell = tmp.Cell;
         
         % --- Tracking ----------------------------------------------------
         
-        wb = waitbar(0, 'Tracking', 'Name', 'Tracking');
-    
         Tr = Tracking.Tracker;
     
-%         Tr.parameter('soma_pos', 'hard', 'n1', 'max', maxDist);
-        Tr.parameter('soma_pos', 'max', maxDist);
+        Tr.parameter('pos', 'max', maxDist);
 
-        Tr.parameter('soma_idx', 'active', false);
-        Tr.parameter('soma_fluo', 'active', false);
-        Tr.parameter('centrosome_idx', 'active', false);
-        Tr.parameter('centrosome_pos', 'active', false);
-        Tr.parameter('centrosome_fluo', 'active', false);
-        Tr.parameter('cone_idx', 'active', false);
-        Tr.parameter('cone_pos', 'active', false);
-        Tr.parameter('cone_fluo', 'active', false);
-
+        Tr.parameter('all', 'active', false);
+        Tr.parameter('soma', 'active', false);
+        Tr.parameter('centrosome', 'active', false);
+        Tr.parameter('cones', 'active', false);
+        
+        empty = struct('idx', [], 'pos', struct('x', NaN, 'y', NaN), 'contour', struct('x', NaN, 'y', NaN));
+        
         % --- Tracking
         
-        T = [Shapes.t];
+        T = [Cell.t];
         
         for i = 1:T(end)
             
@@ -378,29 +385,42 @@ updateStudy();
             Idx = find(T==i);
             n = numel(Idx);
             
-            Soma = [Shapes(Idx).soma];
-            Centrosome = [Shapes(Idx).centrosome];
-            Cone = [Shapes(Idx).cone];
+            % --- Positions
+            
+            P = NaN(n,2);
+            for k = 1:n
+
+                % Positions
+                if ~isempty(Cell(Idx(k)).soma)
+                    P(k,:) = [Cell(Idx(k)).soma.pos.x Cell(Idx(k)).soma.pos.y];
+                elseif ~isempty(Cell(Idx(k)).centrosome)
+                    P(k,:) = [Cell(Idx(k)).centrosome.pos.x Cell(Idx(k)).centrosome.pos.y];
+                else
+                    P(k,:) = [Cell(Idx(k)).all.pos.x Cell(Idx(k)).all.pos.y];
+                end
+                
+                % Fill in empty structures
+                if isempty(Cell(Idx(k)).soma), Cell(Idx(k)).soma = empty; end
+                if isempty(Cell(Idx(k)).centrosome), Cell(Idx(k)).centrosome = empty; end
+                if isempty(Cell(Idx(k)).cones), Cell(Idx(k)).cones = empty; end
+                
+            end
             
             % --- Parameters
             
             % Active parameters            
-            Tr.set('soma_pos', reshape([Soma.pos], [2 n])');
+            Tr.set('pos', P);
             
             % Passive parameters
-            Tr.set('soma_idx', {Soma.idx}');
-            Tr.set('soma_fluo', [Soma.fluo]');
-            Tr.set('centrosome_idx', {Centrosome.idx}');
-            Tr.set('centrosome_pos', reshape([Centrosome.pos], [2 n])');
-            Tr.set('centrosome_fluo', [Centrosome.fluo]');
-            Tr.set('cone_idx', {Cone.idx}');
-            Tr.set('cone_pos', reshape([Cone.pos], [2 n])');
-            Tr.set('cone_fluo', [Cone.fluo]');
+            Tr.set('all', [Cell(Idx).all]');
+            Tr.set('soma', [Cell(Idx).soma]');
+            Tr.set('centrosome', [Cell(Idx).centrosome]');
+            Tr.set('cones', {Cell(Idx).cones}');
             
             Tr.match('method', 'fast', 'verbose', false);
             
             % Waitbar            
-            if ~mod(i, round(T(end)/100)), waitbar(i/T(end), wb); end
+            if ~mod(i, round(T(end)/100)), waitbar(i/T(end), wb, 'Tracking'); end
             
         end
         
@@ -418,26 +438,19 @@ updateStudy();
         
         waitbar(1, wb, 'Converting');
         
-        Fr = struct('status', {}, 't', {}, 'soma', {}, 'centrosome', {}, 'cone', {});
+        Fr = struct('status', {}, 't', {}, 'all', {}, 'soma', {}, 'centrosome', {}, 'cones', {});
         Nt = numel(Tr.traj);
         for i = 1:Nt
             
             Fr(i).status = 'unused';
             Fr(i).t = Tr.traj(i).t;
             
-            Fr(i).soma.idx = Tr.traj(i).soma_idx;
-            Fr(i).soma.pos = Tr.traj(i).soma_pos;
-            Fr(i).soma.fluo = Tr.traj(i).soma_fluo;
-            
-            Fr(i).centrosome.idx = Tr.traj(i).centrosome_idx;
-            Fr(i).centrosome.pos = Tr.traj(i).centrosome_pos;
-            Fr(i).centrosome.fluo = Tr.traj(i).centrosome_fluo;
-            
-            Fr(i).cone.idx = Tr.traj(i).cone_idx;
-            Fr(i).cone.pos = Tr.traj(i).cone_pos;
-            Fr(i).cone.fluo = Tr.traj(i).cone_fluo;
-            
-            % Waitbar            
+            Fr(i).all = Tr.traj(i).all;
+            Fr(i).soma = Tr.traj(i).soma;
+            Fr(i).centrosome = Tr.traj(i).centrosome;
+            Fr(i).cones = Tr.traj(i).cones;
+                        
+            % Waitbar
             waitbar(i/Nt, wb);
             
         end
@@ -449,6 +462,8 @@ updateStudy();
         
         close(wb)
         updateRun();
+        
+        assignin('base', 'Fr', Fr)
         
     end
 

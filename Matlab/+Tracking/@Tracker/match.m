@@ -37,7 +37,7 @@ switch this.iter
             B{end+1} = this.param(i).name;
             B{end+1} = num2cell(this.values(2).(this.param(i).name), 2);
         end
-        
+
         this.traj = struct(B{:});
         nidx = (1:numel(this.traj))';
         
