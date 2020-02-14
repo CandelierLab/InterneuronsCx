@@ -284,6 +284,12 @@ switch key
         this.updateInfos;
         this.updateDisplay();
         
+    case ' '
+        this.Visu.viewPlay = ~this.Visu.viewPlay;
+        if this.Visu.viewPlay
+            this.updateDisplay();
+        end
+        
     case ','
         % Add undefined region to current cell
 
@@ -303,7 +309,7 @@ switch key
         this.updateInfos;
         this.updateDisplay();
         
-    case 'rightarrow'
+    case {'rightarrow', 'rightClick'}
         % Time +1
         
         if ~isnan(this.uid)
@@ -336,7 +342,7 @@ switch key
         this.updateInfos;
         this.updateDisplay();
         
-    case {'return', 'rightClick'}
+    case {'return', 'middleClick'}
         % End cell selection
         
         if ~isnan(this.uid)

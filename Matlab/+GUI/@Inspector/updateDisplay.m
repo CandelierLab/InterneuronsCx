@@ -4,7 +4,8 @@ warning('off', 'MATLAB:ui:javaframe:PropertyToBeRemoved');
 
 % --- Parameters ----------------------------------------------------------
 
-ti = round(get(this.ui.time, 'Value'));
+this.ui.time.Value = round(this.ui.time.Value);
+ti = this.ui.time.Value;
 If = str2double(this.ui.Intfactor.String);
 
 % --- Image ---------------------------------------------------------------
@@ -32,3 +33,18 @@ this.ui.title.String = ['Frame ' num2str(ti, this.Visu.frameFormat) ' / ' num2st
 % Request focus
 jFig = get(this.Viewer, 'JavaFrame');
 jFig.requestFocus;
+
+% --- Draw & play ---------------------------------------------------------
+
+drawnow limitrate
+
+% --- Play / pause
+if this.Visu.viewPlay
+    if ti==this.ui.time.Max
+        this.ui.time.Value = this.ui.time.Min;
+    else
+        this.ui.time.Value = ti+1;
+    end
+    
+    this.updateDisplay(varargin{:});
+end

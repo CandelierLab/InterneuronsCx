@@ -31,7 +31,7 @@ this.assembly(1).soft = struct('method', p.Results.soft, 'norm', p.Results.norm)
 if ~this.iter
     return
 end
-    
+
 if verbose
     fprintf('Assembly ...');
     tic
@@ -45,7 +45,7 @@ e1 = struct();
 e2 = struct();
 
 for i = 1:numel(this.traj)
-
+    
     e1.id(i,1) = i;
     e2.id(i,1) = i;
     
@@ -56,7 +56,7 @@ for i = 1:numel(this.traj)
         e1.(this.param(k).name)(i,:) = this.traj(i).(this.param(k).name)(end,:);
         e2.(this.param(k).name)(i,:) = this.traj(i).(this.param(k).name)(1,:);
     end
-        
+    
 end
 
 n1 = numel(this.traj);
@@ -134,7 +134,7 @@ end
 PCM{end} = Inf(n1, n2);
 
 % --- Distances
-    
+
 [V2, V1] = meshgrid(e2.t, e1.t);
 D = V2-V1;
 
@@ -165,37 +165,45 @@ end
 
 % --- Assignement -----------------------------------------------------
 
-switch method
+if numel(CM)==1
     
-    case {'NN', 'direct'}
+    A = [1 1];
+    
+else
+    
+    switch method
         
-        % Nearest neighbor
-        
-        A = NaN(0,2);
-        
-        while any(isfinite(CM(:)))
+        case {'NN', 'direct'}
             
-            [~, mi] = min(CM(:));
-            [i,j] = ind2sub([n1 n2], mi);
-            A(end+1,:) = [i j];
+            % Nearest neighbor
             
-            CM(i,:) = Inf;
-            CM(:,j) = Inf;
+            A = NaN(0,2);
             
-        end
-        
-    case {'KM', 'optimal'}
-        
-        % Kuhn-Munkres algorithm
-        cna = max(CM(isfinite(CM)))+1;
-        A = assignmunkres(CM, cna);
-        
-    case {'JV', 'fast'}
-        
-        % Jonker-Volgener algorithm
-        cna = max(CM(isfinite(CM)))+1;
-        A = assignjv(CM, cna);
-        
+            while any(isfinite(CM(:)))
+                
+                [~, mi] = min(CM(:));
+                [i,j] = ind2sub([n1 n2], mi);
+                A(end+1,:) = [i j];
+                
+                CM(i,:) = Inf;
+                CM(:,j) = Inf;
+                
+            end
+            
+        case {'KM', 'optimal'}
+            
+            % Kuhn-Munkres algorithm
+            cna = max(CM(isfinite(CM)))+1;
+            A = assignmunkres(CM, cna);
+            
+        case {'JV', 'fast'}
+            
+            % Jonker-Volgener algorithm
+            cna = max(CM(isfinite(CM)))+1;
+            A = assignjv(CM, cna);
+            
+    end
+    
 end
 
 % --- Assembly ------------------------------------------------------------
@@ -207,11 +215,11 @@ A = sortrows(A, 'descend');
 F = fieldnames(this.traj);
 
 for i = 1:size(A,1)
-
+    
     for k = 1:numel(F)
         this.traj(A(i,1)).(F{k}) = [this.traj(A(i,1)).(F{k}) ; this.traj(A(i,2)).(F{k})];
     end
-
+    
 end
 
 % ---Remove

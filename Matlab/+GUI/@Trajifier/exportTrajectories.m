@@ -7,6 +7,8 @@ nTraj = max([Fr.status]);
 empty = struct('idx', {}, 'pos', {}, 'contour', {});
 Tr(nTraj) = struct('id', [], 't', [], 'all', empty, 'soma', empty, 'centrosome', empty, 'cones', {{}});
 
+wb = waitbar(0, '', 'Name', 'Export');
+
 for i = 1:nTraj
     
     % Identifier
@@ -41,7 +43,13 @@ for i = 1:nTraj
         
     end
     
+    waitbar(i/nTraj, wb, sprintf('exporting %i / %i', i, nTraj));
+    
 end
+
+waitbar(1, wb, 'Saving ...');
 
 % Save
 save(this.File.trajectories, 'Tr');
+
+close(wb);

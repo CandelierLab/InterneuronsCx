@@ -10,7 +10,7 @@ warning('off', 'images:imshow:magnificationMustBeFitForDockedFigure');
 prod = false;
 
 % Intensity factor
-intFactor = 3;
+intFactor = 1;
 
 % Tracking
 maxDist = 40;
@@ -37,7 +37,6 @@ fRaw = '';
 fShapes = '';
 fCells = '';
 fFragments = '';
-fTrajectories = '';
 
 lImg = [];
 Nimg = NaN;
@@ -379,7 +378,7 @@ updateStudy();
         
         T = [Cell.t];
         
-        for i = 1:T(end)
+        for i = 1:max(T)
             
             % --- Preparation
             Idx = find(T==i);
@@ -425,7 +424,6 @@ updateStudy();
         end
         
         % --- Assemble
-        
         waitbar(1, wb, 'Assembling');
         Tr.assemble('method', 'fast', 'max', maxTime, 'norm', 1, 'verbose', false);
         
@@ -463,7 +461,11 @@ updateStudy();
         close(wb)
         updateRun();
         
-        assignin('base', 'Fr', Fr)
+        % --- Debug
+        
+% % %         assignin('base', 'Cell', Cell)
+% % %         assignin('base', 'Tr', Tr)
+% % %         assignin('base', 'Fr', Fr)
         
     end
 

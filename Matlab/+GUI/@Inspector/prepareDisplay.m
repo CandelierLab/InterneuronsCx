@@ -24,11 +24,14 @@ B = read(this.Raw);
 % --- Shapes
 
 Scm = hsv(numel(this.Blob))*255/If;
+Scm = Scm(randperm(size(Scm,1)), :);
 
 for i = 1:numel(this.Blob)
 
+    [~, mi] = max(cellfun(@numel, this.Blob(i).contour.x));
+    
     I = sub2ind([this.Images.Height this.Images.Width], ...
-        this.Blob(i).contour.y{1}, this.Blob(i).contour.x{1});
+        this.Blob(i).contour.y{mi}, this.Blob(i).contour.x{mi});
     
     R(I) = R(I)*0.5 + Scm(i,1)*0.5;
     G(I) = G(I)*0.5 + Scm(i,2)*0.5;
