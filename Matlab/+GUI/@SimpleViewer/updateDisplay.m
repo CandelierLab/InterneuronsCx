@@ -3,7 +3,7 @@ function updateDisplay(this, varargin)
 % --- Parameters
 
 ti = round(get(this.ui.time, 'Value'));
-If = str2double(this.ui.Intfactor.String);
+If = this.Visu.intensityFactor;
 
 % --- Image ---------------------------------------------------------------
 
@@ -13,11 +13,15 @@ set(this.Viewer, 'CurrentAxes', this.ui.image);
 cla(this.ui.image);
 hold(this.ui.image, 'on');
 
-imshow(Img);
+imshow(Img, 'Parent', this.ui.image);
 
-axis xy tight
+axis(this.ui.image, 'xy', 'tight');
 
 this.ui.title.String = ['Frame ' num2str(ti, this.Visu.frameFormat) ' / ' num2str(this.Images.number)];
+
+% Request focus
+jFig = get(this.Viewer, 'JavaFrame');
+jFig.requestFocus;
 
 % --- Draw & play ---------------------------------------------------------
 

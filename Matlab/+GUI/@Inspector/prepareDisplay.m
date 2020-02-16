@@ -13,7 +13,7 @@ init = p.Results.init;
 
 % --- Preparation ---------------------------------------------------------
 
-If = str2double(this.ui.Intfactor.String);
+If = this.Visu.intensityFactor;
 
 % Read raw image
 this.Raw.setDirectory(ti)

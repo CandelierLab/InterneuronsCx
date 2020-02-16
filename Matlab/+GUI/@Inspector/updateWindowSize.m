@@ -24,10 +24,6 @@ this.ui.title.Position = [this.Window.menuWidth+20 h-50 W-2*this.Window.menuWidt
 
 % --- Menu
 
-% Intensity factor
-this.ui.menu.Intfactor.Position = [10 h-50 200 20];
-this.ui.Intfactor.Position = [210 h-50 50 25];
-
 % Shortcuts
 this.ui.menu.shortcuts.Position = [10 40 380 h-110];
 

@@ -9,19 +9,13 @@ warning('off', 'images:imshow:magnificationMustBeFitForDockedFigure');
 % Debug / production status
 prod = false;
 
-% Intensity factor
-intFactor = 1;
+Param = struct();
 
 % Tracking
-maxDist = 40;
-maxTime = 10;
 filtNumel = [5 Inf];
 
 % GUI
 Wheight = 50;
-
-% Wcolor = [33 47 60]/255;    % Dark blue
-% Wcolor = [84 153 199]/255;  % Blue
 Wcolor = [0 0 0];  % Black
 
 % =========================================================================
@@ -34,6 +28,7 @@ run = '';
 
 fPath = '';
 fRaw = '';
+fParam = '';
 fShapes = '';
 fCells = '';
 fFragments = '';
@@ -131,6 +126,38 @@ btraj = uicontrol('style', 'togglebutton', ...
     'Callback', @cTrajifier, ...
     'string', 'Trajifier', 'FontName', 'Courier New', 'FontSize', 10);
 
+% --- Parameters
+
+uicontrol('style', 'text', ...
+    'position', [pos(3)-313 25 80 20], ...
+    'string', 'Intensity factor', ...
+    'backgroundColor', 'k', 'foregroundColor', 'w');
+
+pIntFactor = uicontrol('style', 'edit', ...
+    'position', [pos(3)-300 10 50 15], ...
+    'Callback', @updateParam, ...
+    'string', '');
+
+uicontrol('style', 'text', ...
+    'position', [pos(3)-213 25 80 20], ...
+    'string', 'Max distance', ...
+    'backgroundColor', 'k', 'foregroundColor', 'w');
+
+pMaxDist = uicontrol('style', 'edit', ...
+    'position', [pos(3)-200 10 50 15], ...
+    'Callback', @updateParam, ...
+    'string', '');
+
+uicontrol('style', 'text', ...
+    'position', [pos(3)-113 25 80 20], ...
+    'string', 'Max time', ...
+    'backgroundColor', 'k', 'foregroundColor', 'w');
+
+pMaxTime = uicontrol('style', 'edit', ...
+    'position', [pos(3)-100 10 50 15], ...
+    'Callback', @updateParam, ...
+    'string', '');
+
 % --- Initialization
 
 updateStudy();
@@ -161,10 +188,24 @@ updateStudy();
         
         fPath = [DS.data study filesep run filesep 'Files' filesep];
         fRaw = [DS.data study filesep run filesep run '.tiff'];
+        fParam = [fPath 'Parameters.mat'];
         fShapes = [fPath 'Shapes.mat'];
         fCells = [fPath 'Cells.mat'];
         fFragments = [fPath 'Fragments.mat'];
-        fTrajectories = [fPath 'Trajectories.mat'];
+        
+        % --- Parameters
+        
+        if ~exist(fParam, 'file')
+            Param = struct('intFactor', 3, 'maxDist', 40, 'maxTime', 10);            
+            save(fParam, 'Param');            
+        else
+            tmp = load(fParam);
+            Param = tmp.Param;
+        end
+        
+        pIntFactor.String = num2str(Param.intFactor);
+        pMaxDist.String = num2str(Param.maxDist);
+        pMaxTime.String = num2str(Param.maxTime);
         
         % --- Image processing
         
@@ -244,7 +285,7 @@ updateStudy();
             vViewer.run = run;
             vViewer.Window.position = viewPos;
             vViewer.Window.color = Wcolor;
-            vViewer.Visu.intensityFactor = intFactor;
+            vViewer.Visu.intensityFactor = Param.intFactor;
             
             % Init viewer
             vViewer.init;
@@ -323,7 +364,7 @@ updateStudy();
             vViewer.run = run;
             vViewer.Window.position = viewPos;
             vViewer.Window.color = Wcolor;
-            vViewer.Visu.intensityFactor = intFactor;
+            vViewer.Visu.intensityFactor = Param.intFactor;
             
             % Init viewer
             vViewer.init;
@@ -365,7 +406,7 @@ updateStudy();
         
         Tr = Tracking.Tracker;
     
-        Tr.parameter('pos', 'max', maxDist);
+        Tr.parameter('pos', 'max', Param.maxDist);
 
         Tr.parameter('all', 'active', false);
         Tr.parameter('soma', 'active', false);
@@ -425,7 +466,7 @@ updateStudy();
         
         % --- Assemble
         waitbar(1, wb, 'Assembling');
-        Tr.assemble('method', 'fast', 'max', maxTime, 'norm', 1, 'verbose', false);
+        Tr.assemble('method', 'fast', 'max', Param.maxTime, 'norm', 1, 'verbose', false);
         
         % --- Filter
         
@@ -461,12 +502,6 @@ updateStudy();
         close(wb)
         updateRun();
         
-        % --- Debug
-        
-% % %         assignin('base', 'Cell', Cell)
-% % %         assignin('base', 'Tr', Tr)
-% % %         assignin('base', 'Fr', Fr)
-        
     end
 
     % =====================================================================
@@ -483,7 +518,7 @@ updateStudy();
             vViewer.run = run;
             vViewer.Window.position = viewPos;
             vViewer.Window.color = Wcolor;
-            vViewer.Visu.intensityFactor = intFactor;
+            vViewer.Visu.intensityFactor = Param.intFactor;
 
             % Init viewer
             vViewer.init;
@@ -494,4 +529,16 @@ updateStudy();
         
     end
 
+    % =====================================================================
+    function updateParam(varargin)
+        
+        Param.intFactor = str2double(pIntFactor.String);
+        Param.maxDist = str2double(pMaxDist.String);
+        Param.maxTime = str2double(pMaxTime.String);
+        
+        save(fParam, 'Param');
+        
+        vViewer.Visu.intensityFactor = Param.intFactor;
+        vViewer.updateDisplay();
+    end
 end

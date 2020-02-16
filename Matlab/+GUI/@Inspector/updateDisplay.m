@@ -6,7 +6,7 @@ warning('off', 'MATLAB:ui:javaframe:PropertyToBeRemoved');
 
 this.ui.time.Value = round(this.ui.time.Value);
 ti = this.ui.time.Value;
-If = str2double(this.ui.Intfactor.String);
+If = this.Visu.intensityFactor;
 
 % --- Image ---------------------------------------------------------------
 
@@ -15,17 +15,17 @@ cla(this.ui.image);
 hold(this.ui.image, 'on');
 
 this.Data.setDirectory(ti)
-imshow(If*read(this.Data));
+imshow(If*read(this.Data), 'Parent', this.ui.image);
 
-axis xy 
+axis(this.ui.image, 'xy');
 
 if isstruct(this.zoom)
-    axis([this.zoom.pos(1)-this.zoom.size ...
+    axis(this.ui.image, [this.zoom.pos(1)-this.zoom.size ...
         this.zoom.pos(1)+this.zoom.size ...
         this.zoom.pos(2)-this.zoom.size ...
         this.zoom.pos(2)+this.zoom.size]);
 else
-    axis tight
+    axis(this.ui.image, 'tight');
 end
 
 this.ui.title.String = ['Frame ' num2str(ti, this.Visu.frameFormat) ' / ' num2str(this.Images.number)];
