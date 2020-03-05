@@ -7,6 +7,7 @@ function init(this, varargin)
 
 DS = dataSource;
 this.File.images = [DS.data this.study filesep this.run filesep this.run '.tiff'];
+this.File.R = [DS.data this.study filesep this.run filesep this.run '_R.tiff'];
 
 % Get image info
 tmp = imfinfo(this.File.images);

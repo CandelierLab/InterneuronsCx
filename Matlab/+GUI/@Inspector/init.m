@@ -7,6 +7,7 @@ function init(this, varargin)
 
 DS = dataSource;
 this.File.images = [DS.data this.study filesep this.run filesep this.run '.tiff'];
+this.File.red = [DS.data this.study filesep this.run filesep this.run '_R.tiff'];
 this.File.shapes = [DS.data this.study filesep this.run filesep 'Files' filesep 'Shapes.mat'];
 this.File.cells = [DS.data this.study filesep this.run filesep 'Files' filesep 'Cells.mat'];
 this.File.data = [DS.data this.study filesep this.run filesep 'Files' filesep 'Display.tiff'];
@@ -105,6 +106,9 @@ this.load;
 
 % Raw image file
 this.Raw = Tiff(this.File.images, 'r');
+if exist(this.File.red, 'file')
+    this.Red = Tiff(this.File.red, 'r');
+end
 
 % Get data fid
 this.Visu.tagstruct = struct('ImageLength', this.Images.Height, ...

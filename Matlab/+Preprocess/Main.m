@@ -80,7 +80,7 @@ Width = info(1).Width;
 tagstruct = struct('ImageLength', Height, ...
     'ImageWidth', Width, ...
     'Photometric', Tiff.Photometric.MinIsBlack, ...
-	'BitsPerSample', 16, ...
+	'BitsPerSample', 8, ...
 	'SamplesPerPixel', 1, ...
 	'PlanarConfiguration', Tiff.PlanarConfiguration.Chunky, ...
     'Software', mfilename);
@@ -97,20 +97,24 @@ for i = 1:nImg
     % Raw
     Images.Raw.setDirectory(i);
     Raw = read(Images.Raw);
-
+    if isa(Raw, 'uint16'), Raw = uint8(Raw/255); end
+    
     if ~isempty(Images.R)
         Images.R.setDirectory(i);
         R = read(Images.R);
+        if isa(R, 'uint16'), R = uint8(R/255); end
     end
     
     if ~isempty(Images.G)
         Images.G.setDirectory(i);
         G = read(Images.G);
+        if isa(G, 'uint16'), G = uint8(G/255); end
     end
     
     if ~isempty(Images.B)
         Images.B.setDirectory(i);
         B = read(Images.B);
+        if isa(B, 'uint16'), B = uint8(B/255); end
     end
     
     % --- Drift correction
@@ -126,9 +130,12 @@ for i = 1:nImg
         
         % Compensate the drift
         Img = imtranslate(Raw, -[dx dy]);
-        if ~isempty(Images.R), R = imtranslate(R, -[dx dy]); end
-        if ~isempty(Images.G), G = imtranslate(G, -[dx dy]); end
-        if ~isempty(Images.B), B = imtranslate(B, -[dx dy]); end
+        Img(Img==0) = median(Raw(:));
+        
+        if ~isempty(Images.R)
+            R = imtranslate(R, -[dx dy]); 
+            R(R==0) = median(R(:));
+        end
         
     end
         
@@ -142,7 +149,7 @@ for i = 1:nImg
         else
             R = double(R);
             R = R/sum(R(:))*refR*(sum(double(Img(:)))/refRaw);
-            R = uint16(R);
+            R = uint8(R);
         end
     end
     
@@ -172,9 +179,9 @@ for i = 1:nImg
     
     % --- Display
     
-% % %     imshow(R);
-% % %     title("t = " + i);
-% % %     drawnow limitrate
+    imshow(Img);
+    title("t = " + i);
+    drawnow limitrate
     
     if ~mod(i, 10), fprintf('.'); end
     

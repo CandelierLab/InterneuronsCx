@@ -238,9 +238,7 @@ switch key
     
     case 'pageup'
         % First unused fragment
-        this.ui.time.Value
         this.ui.time.Value = min(cellfun(@min, {this.Fr(string({this.Fr.status})=="unused").t}));
-        this.ui.time.Value
         this.updateDisplay();
         
     case 'middleClick'

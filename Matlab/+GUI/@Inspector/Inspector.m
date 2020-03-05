@@ -6,7 +6,7 @@ classdef Inspector < handle
         % Data
         study
         run
-        File = struct('images', '', 'shapes', '');
+        File = struct('images', '', 'red', '', 'shapes', '');
         Images
         
         % GUI
@@ -14,6 +14,7 @@ classdef Inspector < handle
         Window = struct('posittion', [], 'color', [])
         Visu = struct('intensityFactor', 1)
         Raw
+        Red
         Data
         ui = struct()
         keyboardInput = struct('active', false, 'command', '', 'buffer', '')

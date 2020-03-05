@@ -9,15 +9,22 @@ addOptional(p, 'init', false, @islogical);
 parse(p, varargin{:});
 
 ti = p.Results.ti;
-init = p.Results.init;
+% init = p.Results.init;
 
 % --- Preparation ---------------------------------------------------------
 
 If = this.Visu.intensityFactor;
 
 % Read raw image
-this.Raw.setDirectory(ti)
-R = read(this.Raw);
+this.Raw.setDirectory(ti);
+if isempty(this.Red)
+    R = read(this.Raw);
+else
+    this.Red.setDirectory(ti);
+    tmp = double(read(this.Red));
+    tmp(tmp<mean(tmp(:))+5*std(tmp(:))) = 0;
+    R = read(this.Raw) + uint8(2*tmp);
+end
 G = read(this.Raw);
 B = read(this.Raw);
 

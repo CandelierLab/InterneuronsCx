@@ -6,8 +6,10 @@ classdef SimpleViewer < handle
         % Data
         study
         run
-        File = struct('images', '');
+        File = struct('images', '', 'R', '');
+        
         Images
+        Red
         
         % GUI
         Viewer

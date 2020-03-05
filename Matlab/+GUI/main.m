@@ -93,7 +93,7 @@ pstudy = uicontrol('style', 'popupmenu', ...
     'position', [10 15 150 20], ...
     'string', Studies, 'FontName', 'Courier New', 'FontSize', 10, ...
     'Callback', @updateStudy, ...
-    'Value', 1);
+    'Value', 2);
 
 prun = uicontrol('style', 'popupmenu', ...
     'position', [170 15 150 20], ...
@@ -192,6 +192,12 @@ updateStudy();
         fShapes = [fPath 'Shapes.mat'];
         fCells = [fPath 'Cells.mat'];
         fFragments = [fPath 'Fragments.mat'];
+        
+        % --- Check 'Files' folder
+        
+        if ~exist(fPath, 'dir')
+            mkdir(fPath);
+        end
         
         % --- Parameters
         

@@ -5,9 +5,7 @@ warning('off', 'images:imshow:magnificationMustBeFitForDockedFigure');
 % === Paramters ===========================================================
 
 Study = 'LowMag';
-Run = 'P18';
-
-intFactor = 1;
+Run = 'P1';
 
 fContour = 1;
 fCell = 0.2;
@@ -18,11 +16,16 @@ force = true;
 
 DS = dataSource;
 fImg = [DS.data Study filesep Run filesep Run '.tiff'];
+fParam = [DS.data Study filesep Run filesep 'Files' filesep 'Parameters.mat'];
 fTraj = [DS.data Study filesep Run filesep 'Files' filesep 'Trajectories.mat'];
-
 fOutput = [DS.data Study filesep Run filesep 'Files' filesep 'Result.tiff'];
 
 % =========================================================================
+
+% --- Get parameters
+
+tmp = load(fParam);
+Param = tmp.Param;
 
 close all
 figure(1)
@@ -74,10 +77,9 @@ for i = 1:nImg
     Raw = imread(fImg, i);
     
     % Color channels
-    R = intFactor*Raw;
-    G = intFactor*Raw;
-    B = intFactor*Raw;
-    
+    R = Param.intFactor*Raw;
+    G = Param.intFactor*Raw;
+    B = Param.intFactor*Raw;
     
     for j = 1:numel(Tr)
     

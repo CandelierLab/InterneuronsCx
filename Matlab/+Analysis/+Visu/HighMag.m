@@ -7,26 +7,29 @@ warning('off', 'images:imshow:magnificationMustBeFitForDockedFigure');
 Study = 'HighMag';
 Run = 's10e1';
 
-intFactor = 3;
-
 fContour = 1;
 fCell = 0.2;
 
-force = false;
+force = true;
 
 % -------------------------------------------------------------------------
 
 DS = dataSource;
 fImg = [DS.data Study filesep Run filesep Run '.tiff'];
+fParam = [DS.data Study filesep Run filesep 'Files' filesep 'Parameters.mat'];
 fTraj = [DS.data Study filesep Run filesep 'Files' filesep 'Trajectories.mat'];
-
 fOutput = [DS.data Study filesep Run filesep 'Files' filesep 'Result.tiff'];
 
 % =========================================================================
 
+% --- Get parameters
+
+tmp = load(fParam);
+Param = tmp.Param;
+
 close all
-% figure(1)
-% set(gcf, 'WindowStyle', 'docked');
+figure(1)
+set(gcf, 'WindowStyle', 'docked');
 
 % --- Image information
 
@@ -74,10 +77,9 @@ for i = 1:nImg
     Raw = imread(fImg, i);
     
     % Color channels
-    R = intFactor*Raw;
-    G = intFactor*Raw;
-    B = intFactor*Raw;
-    
+    R = Param.intFactor*Raw;
+    G = Param.intFactor*Raw;
+    B = Param.intFactor*Raw;
     
     for j = 1:numel(Tr)
     
@@ -85,6 +87,7 @@ for i = 1:nImg
         ti = find(Tr(j).t==i);
         
         if isempty(ti), continue; end
+        if ti>numel(Tr(j).soma), continue; end
         if isempty(Tr(j).soma(ti).contour) || ~iscell(Tr(j).soma(ti).contour.x), continue; end
         
         I = sub2ind([info.Height info.Width], ...
@@ -115,14 +118,14 @@ for i = 1:nImg
     
     % --- Display
     
-%     clf
-%     imshow(RGB);
-%     
-%     axis xy
-%     
-%     title("Frame " + i);
-%     
-%     drawnow
+    clf
+    imshow(RGB);
+    
+    axis xy
+    
+    title("Frame " + i);
+    
+    drawnow
     
     if ~mod(i,20), fprintf('.'); end
 

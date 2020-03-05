@@ -9,6 +9,12 @@ If = this.Visu.intensityFactor;
 
 Img = If*double(imread(this.File.images, ti))/255;
 
+if exist(this.File.R, 'file')
+    R = double(imread(this.File.R, ti))/255;
+    R(R<mean(R(:))+7*std(R(:))) = 0;
+    Img = cat(3, Img+R*If*2, Img, Img);
+end
+
 set(this.Viewer, 'CurrentAxes', this.ui.image);
 cla(this.ui.image);
 hold(this.ui.image, 'on');
